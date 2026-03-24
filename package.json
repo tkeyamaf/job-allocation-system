@@ -7,7 +7,8 @@
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "db:schema": "ts-node-dev --transpile-only src/db/runSchema.ts"
+    "db:schema": "ts-node-dev --transpile-only src/db/runSchema.ts",
+    "db:migrate": "ts-node-dev --transpile-only src/db/runMigrationV2.ts"
   },
   "keywords": [],
   "author": "",

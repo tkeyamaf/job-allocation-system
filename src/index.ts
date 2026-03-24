@@ -4,6 +4,8 @@ import path from 'path';
 import { canAllocate } from './services/allocationService';
 import { getRecommendedJobs } from './services/recommendationService';
 import { allocateJobTransaction } from './services/allocationTransactionService';
+import candidatesRouter from './routes/candidates';
+import jobsRouter from './routes/jobs';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -154,6 +156,9 @@ app.post('/allocate', async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+app.use('/api', candidatesRouter);
+app.use('/api', jobsRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

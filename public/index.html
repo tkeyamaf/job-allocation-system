@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>JobMatch — Smart Job Allocation</title>
+  <title>AllocateIQ — Smart Job Matching</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
@@ -11,19 +11,25 @@
   <!-- ===== NAVBAR ===== -->
   <nav class="navbar" id="navbar">
     <div class="nav-container">
-      <a class="nav-brand" href="#" data-section="home">
-        <span class="brand-icon">&#9670;</span>
-        JobMatch
+      <a class="nav-brand" href="#home" data-section="home">
+        <span class="brand-logo" aria-hidden="true">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="16" r="16" fill="#2d8a4e"/>
+            <path d="M10 16.5L14.5 21L22 12" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        AllocateIQ
       </a>
       <button class="hamburger" id="hamburger" aria-label="Toggle navigation" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
       <ul class="nav-links" id="nav-links">
-        <li><a href="#" class="nav-link active" data-section="home">Home</a></li>
-        <li><a href="#" class="nav-link" data-section="jobs">Jobs</a></li>
-        <li><a href="#" class="nav-link" data-section="eligibility">Eligibility</a></li>
-        <li><a href="#" class="nav-link" data-section="recommendations">Recommendations</a></li>
-        <li><a href="#" class="nav-link" data-section="about">About</a></li>
+        <li><a href="#home"            class="nav-link active" data-section="home">Home</a></li>
+        <li><a href="#jobs"            class="nav-link" data-section="jobs">Jobs</a></li>
+        <li><a href="#eligibility"     class="nav-link" data-section="eligibility">Eligibility</a></li>
+        <li><a href="#recommendations" class="nav-link" data-section="recommendations">Recommendations</a></li>
+        <li><a href="#profile"         class="nav-link" data-section="profile">Profile</a></li>
+        <li><a href="#about"           class="nav-link" data-section="about">About</a></li>
       </ul>
     </div>
   </nav>
@@ -32,135 +38,154 @@
 
     <!-- ===== HOME SECTION ===== -->
     <section id="section-home" class="section active">
-      <div class="hero">
-        <div class="hero-content">
-          <div class="hero-badge">Rule-Based Matching Engine</div>
-          <h1 class="hero-title">Smart Job Allocation<br /><span class="accent">Made Simple</span></h1>
-          <p class="hero-sub">
-            Our intelligent allocation system matches students to jobs using transparent,
-            rule-based logic — ensuring fair, consistent, and explainable outcomes every time.
-          </p>
-          <div class="hero-cta">
-            <button class="btn btn-primary btn-lg" data-nav="eligibility">Check Eligibility</button>
-            <button class="btn btn-outline btn-lg" data-nav="jobs">Browse Jobs</button>
+
+      <!-- Hero -->
+      <div class="hero-wrapper">
+        <div class="hero">
+          <div class="hero-content">
+            <div class="hero-badge">Intelligent Rule-Based Matching</div>
+            <h1 class="hero-title">Find Your Perfect Job Match — <span class="accent">Smarter, Faster</span></h1>
+            <p class="hero-sub">
+              AllocateIQ uses intelligent rule-based matching to connect students with the right
+              opportunities. No guesswork. Just results.
+            </p>
+            <div class="hero-cta">
+              <button class="btn btn-primary btn-lg" data-nav="profile">Get Started</button>
+              <button class="btn btn-outline btn-lg" data-nav="jobs">Browse Jobs</button>
+            </div>
           </div>
-        </div>
-        <div class="hero-visual" aria-hidden="true">
-          <div class="hero-card-stack">
-            <div class="float-card fc1">
-              <span class="fc-icon">&#10003;</span>
-              <span>Fit Score: 87</span>
+          <div class="hero-stats" aria-hidden="true">
+            <div class="hero-stat-card">
+              <span class="hero-stat-num">500+</span>
+              <span class="hero-stat-label">Active Jobs</span>
             </div>
-            <div class="float-card fc2">
-              <span class="fc-icon">&#9733;</span>
-              <span>Top Match</span>
+            <div class="hero-stat-card hero-stat-card--accent">
+              <span class="hero-stat-num">98%</span>
+              <span class="hero-stat-label">Match Rate</span>
             </div>
-            <div class="float-card fc3">
-              <span class="fc-icon">&#8987;</span>
-              <span>No Cooldown</span>
+            <div class="hero-stat-card">
+              <span class="hero-stat-num">2,000+</span>
+              <span class="hero-stat-label">Students Placed</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="features-section">
-        <h2 class="section-title">Everything You Need</h2>
-        <p class="section-sub">Three powerful tools to navigate the job allocation process with confidence.</p>
-        <div class="feature-cards">
-          <div class="feature-card">
-            <div class="feature-icon">&#9745;</div>
-            <h3>Check Eligibility</h3>
-            <p>Instantly verify whether a student qualifies for a specific job allocation based on all active rules.</p>
-            <button class="btn btn-ghost" data-nav="eligibility">Try it &rarr;</button>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">&#128196;</div>
-            <h3>Browse Jobs</h3>
-            <p>Search available job openings and filter by title or company to find the right opportunities.</p>
-            <button class="btn btn-ghost" data-nav="jobs">View Jobs &rarr;</button>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">&#128161;</div>
-            <h3>Get Recommendations</h3>
-            <p>Receive personalized job recommendations based on your student profile and fit score.</p>
-            <button class="btn btn-ghost" data-nav="recommendations">Explore &rarr;</button>
+      <!-- Benefits Section -->
+      <div class="benefits-section">
+        <div class="section-inner">
+          <h2 class="section-title">Why AllocateIQ?</h2>
+          <p class="section-sub">Four powerful reasons students trust our platform for job placement.</p>
+          <div class="benefits-grid">
+            <div class="benefit-card">
+              <div class="benefit-icon">&#127919;</div>
+              <h3>Personalized Matches</h3>
+              <p>Our algorithm considers your fit score, availability, and preferences to surface only the most relevant opportunities.</p>
+            </div>
+            <div class="benefit-card">
+              <div class="benefit-icon">&#9989;</div>
+              <h3>Eligibility Checks</h3>
+              <p>Know instantly if you qualify before you apply. No wasted effort, no surprises — just clear, honest feedback.</p>
+            </div>
+            <div class="benefit-card">
+              <div class="benefit-icon">&#128640;</div>
+              <h3>Smart Recommendations</h3>
+              <p>Get job suggestions ranked by compatibility with your profile, so the best roles always rise to the top.</p>
+            </div>
+            <div class="benefit-card">
+              <div class="benefit-icon">&#128274;</div>
+              <h3>Fair &amp; Transparent</h3>
+              <p>Clear rules mean no surprises in the allocation process. Every decision is explainable and consistent.</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="stats-bar">
-        <div class="stat-item">
-          <span class="stat-num">5</span>
-          <span class="stat-label">Max weekly allocations per student</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item">
-          <span class="stat-num">70+</span>
-          <span class="stat-label">Minimum fit score required</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item">
-          <span class="stat-num">12</span>
-          <span class="stat-label">Max allocations per job per week</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item">
-          <span class="stat-num">30</span>
-          <span class="stat-label">Max allocations per company per week</span>
+      <!-- How It Works -->
+      <div class="how-it-works">
+        <div class="section-inner">
+          <h2 class="section-title">How It Works</h2>
+          <p class="section-sub">Three simple steps to your next opportunity.</p>
+          <div class="steps-grid">
+            <div class="step-card">
+              <div class="step-number">1</div>
+              <h3>Create Your Profile</h3>
+              <p>Add your skills, experience, salary expectations, and job preferences to build your candidate profile.</p>
+            </div>
+            <div class="step-connector" aria-hidden="true"></div>
+            <div class="step-card">
+              <div class="step-number">2</div>
+              <h3>Get Matched</h3>
+              <p>Our system finds jobs that fit your criteria, checks your eligibility against our rules, and scores your compatibility.</p>
+            </div>
+            <div class="step-connector" aria-hidden="true"></div>
+            <div class="step-card">
+              <div class="step-number">3</div>
+              <h3>Apply with Confidence</h3>
+              <p>Check your eligibility before you apply. Know your fit score and understand exactly why each match was made.</p>
+            </div>
+          </div>
         </div>
       </div>
+
     </section>
 
     <!-- ===== JOBS SECTION ===== -->
     <section id="section-jobs" class="section">
       <div class="page-header">
-        <h2 class="page-title">Job Listings</h2>
-        <p class="page-sub">Search for available jobs by entering your Student ID and fit score below.</p>
+        <h2 class="page-title">Available Jobs</h2>
+        <p class="page-sub">Browse current openings and find roles that match your profile.</p>
       </div>
 
-      <div class="search-card">
-        <form id="jobs-search-form" novalidate>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="jobs-student-id">Student ID <span class="required">*</span></label>
-              <input type="text" id="jobs-student-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" />
-              <span class="field-error" id="jobs-student-id-error"></span>
-            </div>
-            <div class="form-group form-group-sm">
-              <label for="jobs-fit-score">Fit Score (0–100) <span class="required">*</span></label>
-              <input type="number" id="jobs-fit-score" placeholder="e.g. 85" min="0" max="100" />
-              <span class="field-error" id="jobs-fit-score-error"></span>
-            </div>
-            <div class="form-group form-group-action">
-              <label>&nbsp;</label>
-              <button type="submit" class="btn btn-primary btn-full" id="jobs-search-btn">
-                <span class="btn-text">Search Jobs</span>
-                <span class="btn-spinner hidden"></span>
-              </button>
-            </div>
-          </div>
-        </form>
+      <div class="jobs-controls">
+        <div class="jobs-search-bar">
+          <span class="search-icon" aria-hidden="true">&#128269;</span>
+          <input type="text" id="jobs-search-input" class="jobs-search-field" placeholder="Search by title or company..." autocomplete="off" />
+        </div>
+        <div class="jobs-filter-row">
+          <select id="jobs-status-filter" class="filter-select">
+            <option value="">All Statuses</option>
+            <option value="OPEN">Open</option>
+            <option value="REOPENED">Reopened</option>
+            <option value="CLOSED">Closed</option>
+          </select>
+          <input type="text" id="jobs-location-filter" class="filter-input-sm" placeholder="Location..." autocomplete="off" />
+          <button id="jobs-search-btn" class="btn btn-primary">
+            <span class="btn-text">Search</span>
+            <span class="btn-spinner hidden"></span>
+          </button>
+        </div>
       </div>
 
-      <div id="jobs-filter-bar" class="filter-bar hidden">
-        <input type="text" id="jobs-filter-input" class="filter-input" placeholder="Filter by title or company..." />
+      <div class="jobs-meta-row">
         <span id="jobs-count" class="results-count"></span>
       </div>
 
+      <div id="jobs-loading" class="skeleton-grid hidden">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+
       <div id="jobs-results" class="jobs-grid"></div>
+
       <div id="jobs-empty" class="empty-state hidden">
         <div class="empty-icon">&#128269;</div>
-        <p class="empty-title">No jobs found</p>
-        <p class="empty-sub">Try adjusting your fit score or check back later.</p>
+        <p class="empty-title">No jobs found matching your search</p>
+        <p class="empty-sub">Try adjusting your filters or search terms and try again.</p>
       </div>
+
       <div id="jobs-error" class="error-banner hidden"></div>
     </section>
 
     <!-- ===== ELIGIBILITY SECTION ===== -->
     <section id="section-eligibility" class="section">
       <div class="page-header">
-        <h2 class="page-title">Eligibility Checker</h2>
-        <p class="page-sub">Check whether a student is eligible for a specific job allocation before submitting.</p>
+        <h2 class="page-title">Check Your Eligibility</h2>
+        <p class="page-sub">Enter your details below to instantly see if you qualify for a specific job allocation.</p>
       </div>
 
       <div class="eligibility-layout">
@@ -169,6 +194,7 @@
             <div class="form-group">
               <label for="elig-student-id">Student ID <span class="required">*</span></label>
               <input type="text" id="elig-student-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" />
+              <span class="field-helper">Your unique student identifier (UUID format)</span>
               <span class="field-error" id="elig-student-id-error"></span>
             </div>
             <div class="form-group">
@@ -181,19 +207,20 @@
               <input type="text" id="elig-company-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" />
               <span class="field-error" id="elig-company-id-error"></span>
             </div>
-            <div class="form-row-half">
-              <div class="form-group">
-                <label for="elig-fit-score">Fit Score (0–100) <span class="required">*</span></label>
-                <input type="number" id="elig-fit-score" placeholder="e.g. 85" min="0" max="100" />
-                <span class="field-error" id="elig-fit-score-error"></span>
+            <div class="form-group">
+              <label for="elig-fit-score">Fit Score <span class="required">*</span></label>
+              <div class="slider-row">
+                <input type="range" id="elig-fit-score" class="fit-slider" min="0" max="100" value="75" />
+                <span id="elig-fit-score-display" class="slider-value">75</span>
               </div>
-              <div class="form-group">
-                <label for="elig-job-status">Job Status <span class="required">*</span></label>
-                <select id="elig-job-status">
-                  <option value="OPEN">OPEN</option>
-                  <option value="REOPENED">REOPENED</option>
-                </select>
-              </div>
+              <span class="field-error" id="elig-fit-score-error"></span>
+            </div>
+            <div class="form-group">
+              <label for="elig-job-status">Job Status <span class="required">*</span></label>
+              <select id="elig-job-status">
+                <option value="OPEN">OPEN</option>
+                <option value="REOPENED">REOPENED</option>
+              </select>
             </div>
             <button type="submit" class="btn btn-primary btn-full" id="elig-submit-btn">
               <span class="btn-text">Check Allocation</span>
@@ -216,26 +243,28 @@
     <section id="section-recommendations" class="section">
       <div class="page-header">
         <h2 class="page-title">Job Recommendations</h2>
-        <p class="page-sub">Get personalized job recommendations tailored to your profile and fit score.</p>
+        <p class="page-sub">Enter your Student ID and fit score to see personalized job recommendations.</p>
       </div>
 
-      <div class="search-card">
-        <form id="rec-form" novalidate>
-          <div class="form-row">
+      <div class="rec-form-wrapper">
+        <form id="rec-form" novalidate class="rec-form-card">
+          <div class="rec-form-fields">
             <div class="form-group">
               <label for="rec-student-id">Student ID <span class="required">*</span></label>
               <input type="text" id="rec-student-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" />
               <span class="field-error" id="rec-student-id-error"></span>
             </div>
-            <div class="form-group form-group-sm">
-              <label for="rec-fit-score">Fit Score (0–100) <span class="required">*</span></label>
-              <input type="number" id="rec-fit-score" placeholder="e.g. 85" min="0" max="100" />
+            <div class="form-group">
+              <label for="rec-fit-score">Fit Score <span class="required">*</span></label>
+              <div class="slider-row">
+                <input type="range" id="rec-fit-score" class="fit-slider" min="0" max="100" value="75" />
+                <span id="rec-fit-score-display" class="slider-value">75</span>
+              </div>
               <span class="field-error" id="rec-fit-score-error"></span>
             </div>
-            <div class="form-group form-group-action">
-              <label>&nbsp;</label>
+            <div class="form-group form-group-btn">
               <button type="submit" class="btn btn-primary btn-full" id="rec-submit-btn">
-                <span class="btn-text">Get Recommendations</span>
+                <span class="btn-text">Get My Recommendations</span>
                 <span class="btn-spinner hidden"></span>
               </button>
             </div>
@@ -243,157 +272,540 @@
         </form>
       </div>
 
+      <div id="rec-loading" class="skeleton-grid hidden">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+
       <div id="rec-results" class="jobs-grid"></div>
+
       <div id="rec-empty" class="empty-state hidden">
         <div class="empty-icon">&#128587;</div>
         <p class="empty-title">No recommendations found</p>
-        <p class="empty-sub">Try a different fit score or check back later for new openings.</p>
+        <p class="empty-sub">Enter your Student ID above to see personalized job recommendations.</p>
       </div>
-      <div id="rec-loading" class="loading-state hidden">
-        <div class="loading-spinner-lg"></div>
-        <p>Finding the best matches for you...</p>
-      </div>
+
       <div id="rec-error" class="error-banner hidden"></div>
+    </section>
+
+    <!-- ===== PROFILE SECTION ===== -->
+    <section id="section-profile" class="section">
+      <div class="page-header">
+        <h2 class="page-title">Candidate Profile</h2>
+        <p class="page-sub">Complete your profile so AllocateIQ can find the best matches for you.</p>
+      </div>
+
+      <div class="profile-form-wrapper">
+        <form id="profile-form" novalidate>
+
+          <!-- Section 1: Personal Info -->
+          <div class="form-section">
+            <div class="form-section-header">
+              <span class="form-section-icon">&#128100;</span>
+              <div>
+                <h3 class="form-section-title">Personal Information</h3>
+                <p class="form-section-sub">Your basic contact details</p>
+              </div>
+            </div>
+            <div class="form-section-body">
+              <div class="profile-picture-area">
+                <div class="profile-picture-preview" id="profile-picture-preview">
+                  <span class="profile-picture-placeholder" id="profile-picture-placeholder">&#128100;</span>
+                  <img id="profile-picture-img" class="profile-picture-img hidden" alt="Profile preview" />
+                </div>
+                <div class="profile-picture-info">
+                  <button type="button" class="btn btn-outline" id="profile-picture-btn">Upload Photo</button>
+                  <input type="file" id="profile-picture-input" class="hidden" accept="image/*" />
+                  <p class="field-helper">JPG, PNG or GIF. Max 2MB.</p>
+                </div>
+              </div>
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label for="pf-full-name">Full Name <span class="required">*</span></label>
+                  <input type="text" id="pf-full-name" placeholder="Jane Smith" autocomplete="name" />
+                  <span class="field-error" id="pf-full-name-error"></span>
+                </div>
+                <div class="form-group">
+                  <label for="pf-email">Email Address <span class="required">*</span></label>
+                  <input type="email" id="pf-email" placeholder="jane@example.com" autocomplete="email" />
+                  <span class="field-error" id="pf-email-error"></span>
+                </div>
+                <div class="form-group">
+                  <label for="pf-phone">Phone Number</label>
+                  <input type="tel" id="pf-phone" placeholder="+1 (555) 000-0000" autocomplete="tel" />
+                </div>
+                <div class="form-group">
+                  <label for="pf-city">City</label>
+                  <input type="text" id="pf-city" placeholder="Austin" autocomplete="address-level2" />
+                </div>
+                <div class="form-group">
+                  <label for="pf-state">State</label>
+                  <input type="text" id="pf-state" placeholder="TX" autocomplete="address-level1" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Job Preferences -->
+          <div class="form-section">
+            <div class="form-section-header">
+              <span class="form-section-icon">&#127919;</span>
+              <div>
+                <h3 class="form-section-title">Job Preferences</h3>
+                <p class="form-section-sub">Tell us what kind of work you're looking for</p>
+              </div>
+            </div>
+            <div class="form-section-body">
+              <div class="form-group">
+                <label>Preferred Job Titles</label>
+                <div class="tags-input-wrapper" id="preferred-titles-wrapper">
+                  <div class="tags-container" id="preferred-titles-tags"></div>
+                  <input type="text" class="tags-input-field" id="preferred-titles-input" placeholder="Type a title and press Enter..." />
+                </div>
+                <span class="field-helper">e.g. Frontend Engineer, Data Analyst</span>
+              </div>
+              <div class="form-group">
+                <label>Job Types</label>
+                <div class="checkbox-group">
+                  <label class="checkbox-label"><input type="checkbox" name="job_types" value="Full-time" /> Full-time</label>
+                  <label class="checkbox-label"><input type="checkbox" name="job_types" value="Part-time" /> Part-time</label>
+                  <label class="checkbox-label"><input type="checkbox" name="job_types" value="Contract" /> Contract</label>
+                  <label class="checkbox-label"><input type="checkbox" name="job_types" value="Internship" /> Internship</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Work Setting</label>
+                <div class="radio-group">
+                  <label class="radio-label"><input type="radio" name="work_setting" value="REMOTE" /> Remote</label>
+                  <label class="radio-label"><input type="radio" name="work_setting" value="HYBRID" /> Hybrid</label>
+                  <label class="radio-label"><input type="radio" name="work_setting" value="ONSITE" /> Onsite</label>
+                  <label class="radio-label"><input type="radio" name="work_setting" value="ANY" checked /> No Preference</label>
+                </div>
+              </div>
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label for="pf-salary-min">Salary Minimum</label>
+                  <div class="input-prefix-wrapper">
+                    <span class="input-prefix">$</span>
+                    <input type="number" id="pf-salary-min" placeholder="50000" min="0" class="input-with-prefix" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="pf-salary-max">Salary Maximum</label>
+                  <div class="input-prefix-wrapper">
+                    <span class="input-prefix">$</span>
+                    <input type="number" id="pf-salary-max" placeholder="120000" min="0" class="input-with-prefix" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Experience & Skills -->
+          <div class="form-section">
+            <div class="form-section-header">
+              <span class="form-section-icon">&#128188;</span>
+              <div>
+                <h3 class="form-section-title">Experience &amp; Skills</h3>
+                <p class="form-section-sub">Your background and technical abilities</p>
+              </div>
+            </div>
+            <div class="form-section-body">
+              <div class="form-group">
+                <label for="pf-years-exp">Years of Experience</label>
+                <select id="pf-years-exp">
+                  <option value="">Select...</option>
+                  <option value="0">Less than 1 year</option>
+                  <option value="1">1 year</option>
+                  <option value="2">2 years</option>
+                  <option value="3">3 years</option>
+                  <option value="4">4 years</option>
+                  <option value="5">5 years</option>
+                  <option value="6">6 years</option>
+                  <option value="7">7 years</option>
+                  <option value="8">8 years</option>
+                  <option value="9">9 years</option>
+                  <option value="10">10 years</option>
+                  <option value="15">11–15 years</option>
+                  <option value="20">16–20 years</option>
+                  <option value="21">20+ years</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Industries of Interest</label>
+                <div class="tags-input-wrapper" id="industries-wrapper">
+                  <div class="tags-container" id="industries-tags"></div>
+                  <input type="text" class="tags-input-field" id="industries-input" placeholder="Type an industry and press Enter..." />
+                </div>
+                <span class="field-helper">e.g. FinTech, Healthcare, SaaS</span>
+              </div>
+              <div class="form-group">
+                <label>Skills</label>
+                <div class="tags-input-wrapper" id="skills-wrapper">
+                  <div class="tags-container" id="skills-tags"></div>
+                  <input type="text" class="tags-input-field" id="skills-input" placeholder="Type a skill and press Enter..." />
+                </div>
+                <span class="field-helper">e.g. Python, React, SQL</span>
+              </div>
+              <div class="form-group">
+                <label>Certifications</label>
+                <div class="tags-input-wrapper" id="certifications-wrapper">
+                  <div class="tags-container" id="certifications-tags"></div>
+                  <input type="text" class="tags-input-field" id="certifications-input" placeholder="Type a certification and press Enter..." />
+                </div>
+                <span class="field-helper">e.g. AWS Certified, PMP</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 4: Education & Authorization -->
+          <div class="form-section">
+            <div class="form-section-header">
+              <span class="form-section-icon">&#127891;</span>
+              <div>
+                <h3 class="form-section-title">Education &amp; Authorization</h3>
+                <p class="form-section-sub">Your academic background and work eligibility</p>
+              </div>
+            </div>
+            <div class="form-section-body">
+              <div class="form-group">
+                <label for="pf-education">Education</label>
+                <textarea id="pf-education" rows="3" placeholder="e.g. B.S. Computer Science, University of Texas at Austin, 2024"></textarea>
+              </div>
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label for="pf-work-auth">Work Authorization Status</label>
+                  <select id="pf-work-auth">
+                    <option value="">Select...</option>
+                    <option value="US Citizen">US Citizen</option>
+                    <option value="Green Card">Green Card</option>
+                    <option value="H1B">H1B Visa</option>
+                    <option value="OPT">OPT</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="pf-availability">Availability to Start</label>
+                  <input type="date" id="pf-availability" />
+                </div>
+                <div class="form-group">
+                  <label for="pf-timeframe">Timeframe</label>
+                  <select id="pf-timeframe">
+                    <option value="">Select...</option>
+                    <option value="Immediately">Immediately</option>
+                    <option value="1 month">1 month</option>
+                    <option value="3 months">3 months</option>
+                    <option value="6 months">6 months</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 5: Online Presence -->
+          <div class="form-section">
+            <div class="form-section-header">
+              <span class="form-section-icon">&#127758;</span>
+              <div>
+                <h3 class="form-section-title">Online Presence</h3>
+                <p class="form-section-sub">Links to your professional profiles</p>
+              </div>
+            </div>
+            <div class="form-section-body">
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label for="pf-linkedin">LinkedIn URL</label>
+                  <input type="url" id="pf-linkedin" placeholder="https://linkedin.com/in/yourname" />
+                </div>
+                <div class="form-group">
+                  <label for="pf-portfolio">Portfolio URL</label>
+                  <input type="url" id="pf-portfolio" placeholder="https://yourportfolio.com" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Preferred Companies</label>
+                <div class="tags-input-wrapper" id="preferred-companies-wrapper">
+                  <div class="tags-container" id="preferred-companies-tags"></div>
+                  <input type="text" class="tags-input-field" id="preferred-companies-input" placeholder="Type a company name and press Enter..." />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 6: About Me -->
+          <div class="form-section">
+            <div class="form-section-header">
+              <span class="form-section-icon">&#128221;</span>
+              <div>
+                <h3 class="form-section-title">About Me</h3>
+                <p class="form-section-sub">A brief summary and your resume</p>
+              </div>
+            </div>
+            <div class="form-section-body">
+              <div class="form-group">
+                <label for="pf-summary">Summary / About Me</label>
+                <textarea id="pf-summary" rows="5" placeholder="Tell employers a bit about yourself, your goals, and what makes you a great candidate..." maxlength="500"></textarea>
+                <div class="char-counter"><span id="pf-summary-count">0</span> / 500</div>
+              </div>
+              <div class="form-group">
+                <label>Resume</label>
+                <div class="resume-drop-area" id="resume-drop-area">
+                  <span class="resume-drop-icon" aria-hidden="true">&#128196;</span>
+                  <p class="resume-drop-title">Drag &amp; drop your resume here</p>
+                  <p class="resume-drop-sub">or <button type="button" class="btn-link" id="resume-browse-btn">browse files</button></p>
+                  <p class="resume-drop-types">PDF, DOC, DOCX up to 5MB</p>
+                  <input type="file" id="resume-input" class="hidden" accept=".pdf,.doc,.docx" />
+                </div>
+                <div id="resume-file-display" class="resume-file-display hidden">
+                  <span class="resume-file-icon">&#128196;</span>
+                  <span id="resume-file-name" class="resume-file-name"></span>
+                  <button type="button" class="btn-icon" id="resume-remove-btn" aria-label="Remove file">&#10005;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-submit-row">
+            <button type="submit" class="btn btn-primary btn-lg btn-full" id="profile-submit-btn">
+              <span class="btn-text">Save Profile</span>
+              <span class="btn-spinner hidden"></span>
+            </button>
+          </div>
+
+          <div id="profile-success" class="success-banner hidden">
+            Your profile has been saved successfully! &#127881;
+          </div>
+          <div id="profile-error" class="error-banner hidden"></div>
+
+        </form>
+      </div>
     </section>
 
     <!-- ===== ABOUT SECTION ===== -->
     <section id="section-about" class="section">
       <div class="page-header">
-        <h2 class="page-title">How It Works</h2>
-        <p class="page-sub">Our allocation system uses a set of transparent rules to determine job eligibility. Here's what each rule means in plain English.</p>
+        <h2 class="page-title">How AllocateIQ Works</h2>
+        <p class="page-sub">
+          AllocateIQ connects students with jobs through a transparent, rule-based allocation engine.
+          Every decision follows the same logic — no favoritism, no guesswork.
+          Here's exactly how the system evaluates your eligibility.
+        </p>
       </div>
 
-      <div class="about-intro-card">
-        <div class="about-intro-icon">&#9881;</div>
-        <div>
-          <h3>Rule-Based Allocation Engine</h3>
-          <p>
-            Every time a student is considered for a job, the system runs through a series of checks automatically.
-            If any rule is violated, the allocation is blocked and the reason is clearly explained.
-            This ensures fairness, prevents overloading companies and jobs, and keeps the process transparent.
-          </p>
+      <div class="about-intro">
+        <div class="section-inner">
+          <div class="about-intro-card">
+            <div class="about-intro-icon" aria-hidden="true">&#9881;</div>
+            <div>
+              <h3>The Allocation Engine</h3>
+              <p>
+                Every time you're considered for a job, the system runs through a series of checks in order.
+                If any rule is violated, the allocation is blocked and the reason is clearly explained.
+                This ensures fairness, prevents overloading companies, and keeps the process transparent for everyone.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="rules-grid">
-        <div class="rule-card">
-          <div class="rule-header">
-            <span class="rule-icon">&#127919;</span>
-            <div>
-              <h3 class="rule-title">Fit Score Threshold</h3>
-              <code class="rule-code">FIT_THRESHOLD</code>
+      <div class="section-inner">
+        <h2 class="section-title" style="margin-bottom: 24px;">The 5 Rules</h2>
+        <div class="rules-grid">
+          <div class="rule-card">
+            <div class="rule-header">
+              <span class="rule-icon" aria-hidden="true">&#127919;</span>
+              <div>
+                <h3 class="rule-title">Fit Score Threshold</h3>
+                <code class="rule-code">FIT_THRESHOLD</code>
+              </div>
+            </div>
+            <p class="rule-desc">
+              Only jobs where your fit score is <strong>70 or above</strong> are considered.
+              This ensures quality matches and a high success rate for placements.
+            </p>
+            <div class="rule-example">
+              <span class="example-label">Example:</span> A score of 65 won't qualify — but improving your profile can push you over the threshold.
             </div>
           </div>
-          <p class="rule-desc">
-            A student must have a fit score of <strong>70 or above</strong> to be considered for any job allocation.
-            This ensures only well-matched candidates are placed, improving outcomes for both students and employers.
-          </p>
-          <div class="rule-example">
-            <span class="example-label">Example:</span> A student with a fit score of 65 will be blocked from allocation until their score improves.
-          </div>
-        </div>
 
-        <div class="rule-card">
-          <div class="rule-header">
-            <span class="rule-icon">&#128203;</span>
-            <div>
-              <h3 class="rule-title">Job Weekly Cap</h3>
-              <code class="rule-code">JOB_CAP</code>
+          <div class="rule-card">
+            <div class="rule-header">
+              <span class="rule-icon" aria-hidden="true">&#128203;</span>
+              <div>
+                <h3 class="rule-title">Job Allocation Cap</h3>
+                <code class="rule-code">JOB_CAP</code>
+              </div>
+            </div>
+            <p class="rule-desc">
+              Each job accepts a maximum of <strong>12 placements per week</strong> to ensure fair distribution.
+              Once full, it becomes temporarily unavailable until the next week.
+            </p>
+            <div class="rule-example">
+              <span class="example-label">Example:</span> A popular posting that's full this week will reopen next Monday.
             </div>
           </div>
-          <p class="rule-desc">
-            Each job posting can receive a maximum of <strong>12 allocations per week</strong>.
-            Once a job reaches this limit, no further students can be allocated to it until the next week begins.
-          </p>
-          <div class="rule-example">
-            <span class="example-label">Example:</span> A popular job that has already received 12 applications this week will be temporarily unavailable.
-          </div>
-        </div>
 
-        <div class="rule-card">
-          <div class="rule-header">
-            <span class="rule-icon">&#127970;</span>
-            <div>
-              <h3 class="rule-title">Company Weekly Cap</h3>
-              <code class="rule-code">COMPANY_CAP</code>
+          <div class="rule-card">
+            <div class="rule-header">
+              <span class="rule-icon" aria-hidden="true">&#127970;</span>
+              <div>
+                <h3 class="rule-title">Company Cap</h3>
+                <code class="rule-code">COMPANY_CAP</code>
+              </div>
+            </div>
+            <p class="rule-desc">
+              Companies receive no more than <strong>30 placements per week</strong> across all their jobs.
+              This maintains balance and prevents any single employer from being overwhelmed.
+            </p>
+            <div class="rule-example">
+              <span class="example-label">Example:</span> If a company hits 30 this week, try their other roles next week.
             </div>
           </div>
-          <p class="rule-desc">
-            Each company can receive a maximum of <strong>30 total allocations per week</strong> across all their job postings.
-            This prevents any single company from being overwhelmed with applications.
-          </p>
-          <div class="rule-example">
-            <span class="example-label">Example:</span> A company with 30 allocations this week will not receive any more until next week resets.
-          </div>
-        </div>
 
-        <div class="rule-card">
-          <div class="rule-header">
-            <span class="rule-icon">&#128100;</span>
-            <div>
-              <h3 class="rule-title">Student Weekly Cap</h3>
-              <code class="rule-code">STUDENT_WEEKLY_CAP</code>
+          <div class="rule-card">
+            <div class="rule-header">
+              <span class="rule-icon" aria-hidden="true">&#128197;</span>
+              <div>
+                <h3 class="rule-title">Weekly Application Limit</h3>
+                <code class="rule-code">STUDENT_WEEKLY_CAP</code>
+              </div>
+            </div>
+            <p class="rule-desc">
+              Students can apply to up to <strong>5 jobs per week</strong> to encourage thoughtful, quality applications
+              rather than mass applying.
+            </p>
+            <div class="rule-example">
+              <span class="example-label">Example:</span> New application slots open every Monday at midnight.
             </div>
           </div>
-          <p class="rule-desc">
-            Each student can be allocated to a maximum of <strong>5 jobs per week</strong>.
-            This encourages thoughtful job applications and prevents students from mass-applying without consideration.
-          </p>
-          <div class="rule-example">
-            <span class="example-label">Example:</span> A student who has already been allocated 5 jobs this week must wait until next Monday.
-          </div>
-        </div>
 
-        <div class="rule-card">
-          <div class="rule-header">
-            <span class="rule-icon">&#8987;</span>
-            <div>
-              <h3 class="rule-title">Cooldown Period</h3>
-              <code class="rule-code">COOLDOWN</code>
+          <div class="rule-card">
+            <div class="rule-header">
+              <span class="rule-icon" aria-hidden="true">&#9203;</span>
+              <div>
+                <h3 class="rule-title">Cooldown Period</h3>
+                <code class="rule-code">COOLDOWN</code>
+              </div>
+            </div>
+            <p class="rule-desc">
+              After applying to a job, a <strong>14-day cooldown</strong> applies before you can reapply to the same position.
+              This gives other students a fair chance.
+            </p>
+            <div class="rule-example">
+              <span class="example-label">Example:</span> Applied to "Frontend Engineer at Acme" today? You can reapply in 14 days.
             </div>
           </div>
-          <p class="rule-desc">
-            After being allocated to or rejected from a specific job, a student must wait through a
-            <strong>cooldown period</strong> before reapplying to the same job.
-            This prevents spamming and gives other students a fair chance.
-          </p>
-          <div class="rule-example">
-            <span class="example-label">Example:</span> A student who recently applied to "Frontend Engineer at Acme" must wait before applying again.
-          </div>
-        </div>
-
-        <div class="rule-card rule-card-flow">
-          <div class="rule-header">
-            <span class="rule-icon">&#128260;</span>
-            <div>
-              <h3 class="rule-title">How Checks Are Ordered</h3>
-              <code class="rule-code">FLOW</code>
-            </div>
-          </div>
-          <p class="rule-desc">
-            Rules are checked in a specific order. The first failing rule stops the process and returns a clear reason code.
-          </p>
-          <ol class="flow-list">
-            <li>Job exists and company matches</li>
-            <li>Fit score meets the threshold (&ge; 70)</li>
-            <li>Job hasn't hit its weekly cap (12)</li>
-            <li>Company hasn't hit its weekly cap (30)</li>
-            <li>Student hasn't hit their weekly cap (5)</li>
-            <li>Student is not in a cooldown period for that job</li>
-          </ol>
         </div>
       </div>
+
+      <!-- FAQ -->
+      <div class="faq-section">
+        <div class="section-inner">
+          <h2 class="section-title">Frequently Asked Questions</h2>
+          <div class="faq-list" id="faq-list">
+
+            <div class="faq-item">
+              <button class="faq-question" aria-expanded="false">
+                What is a fit score?
+                <span class="faq-chevron" aria-hidden="true">&#8964;</span>
+              </button>
+              <div class="faq-answer">
+                <p>
+                  A fit score is a number from 0 to 100 that represents how well your profile matches a specific job.
+                  It's calculated based on your skills, experience, preferences, and the job's requirements.
+                  A score of 70 or higher means you're a strong candidate for that role.
+                </p>
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <button class="faq-question" aria-expanded="false">
+                How do I get recommended for jobs?
+                <span class="faq-chevron" aria-hidden="true">&#8964;</span>
+              </button>
+              <div class="faq-answer">
+                <p>
+                  Complete your candidate profile on the Profile page, then visit the Recommendations page and enter your
+                  Student ID and fit score. The system will find all jobs where you're eligible based on the allocation rules
+                  and rank them by compatibility.
+                </p>
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <button class="faq-question" aria-expanded="false">
+                Can I reapply after being rejected?
+                <span class="faq-chevron" aria-hidden="true">&#8964;</span>
+              </button>
+              <div class="faq-answer">
+                <p>
+                  Yes — after the 14-day cooldown period expires. This window gives you time to improve your profile,
+                  gain new skills, or wait for fresh availability at the company. After the cooldown, you're free to
+                  reapply as long as all other rules still pass.
+                </p>
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <button class="faq-question" aria-expanded="false">
+                How is my data used?
+                <span class="faq-chevron" aria-hidden="true">&#8964;</span>
+              </button>
+              <div class="faq-answer">
+                <p>
+                  Your profile data is used exclusively to match you with relevant job opportunities and to check
+                  your eligibility. We do not sell your data to third parties. Your information is stored securely
+                  and you can request deletion at any time by contacting our support team.
+                </p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
     </section>
 
   </main>
 
+  <!-- ===== FOOTER ===== -->
   <footer class="footer">
     <div class="footer-container">
-      <div class="footer-brand">
-        <span class="brand-icon">&#9670;</span>
-        <strong>JobMatch</strong>
+      <div class="footer-col">
+        <div class="footer-brand">
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="16" cy="16" r="16" fill="#2d8a4e"/>
+            <path d="M10 16.5L14.5 21L22 12" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <strong>AllocateIQ</strong>
+        </div>
+        <p class="footer-tagline">Smart job matching for students. Rule-based, fair, and transparent.</p>
       </div>
-      <p class="footer-copy">Job Allocation System &mdash; Built for fair, transparent placement.</p>
+      <div class="footer-col">
+        <h4 class="footer-heading">Quick Links</h4>
+        <ul class="footer-links">
+          <li><a href="#home"            data-section="home">Home</a></li>
+          <li><a href="#jobs"            data-section="jobs">Browse Jobs</a></li>
+          <li><a href="#eligibility"     data-section="eligibility">Check Eligibility</a></li>
+          <li><a href="#recommendations" data-section="recommendations">Recommendations</a></li>
+          <li><a href="#profile"         data-section="profile">My Profile</a></li>
+          <li><a href="#about"           data-section="about">About</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4 class="footer-heading">Contact</h4>
+        <ul class="footer-contact">
+          <li>&#128231; support@allocateiq.com</li>
+          <li>&#128205; Austin, TX</li>
+          <li>&#9200; Mon–Fri, 9am–5pm CST</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-container">
+        <p>&copy; 2026 AllocateIQ. Built for fair, transparent placement.</p>
+      </div>
     </div>
   </footer>
 

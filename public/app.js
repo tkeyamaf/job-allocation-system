@@ -1,6 +1,7 @@
 /* =========================================
-   JOBMATCH — app.js
+   AllocateIQ — app.js
    Single-page navigation + API integration
+   Pure vanilla JS, no external libraries
    ========================================= */
 
 'use strict';
@@ -13,24 +14,24 @@ const API_BASE = '';  // relative URLs — served from same origin
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const REASON_MESSAGES = {
-  FIT_THRESHOLD:       'Fit score is below the minimum threshold of 70.',
-  JOB_CAP:             'This job has reached its maximum of 12 allocations this week.',
-  COMPANY_CAP:         'This company has reached its maximum of 30 allocations this week.',
-  STUDENT_WEEKLY_CAP:  'You have reached your maximum of 5 allocations this week.',
-  COOLDOWN:            'You must wait until your cooldown period expires before reapplying to this job.',
-  JOB_NOT_FOUND:       'Job not found in the system.',
-  COMPANY_MISMATCH:    'Company ID does not match the job\'s company.',
+  FIT_THRESHOLD:      'Your fit score is below the minimum required threshold of 70. Try improving your profile score.',
+  JOB_CAP:            'This job has reached its maximum allocation limit of 12 placements this week. Check back next week.',
+  COMPANY_CAP:        'This company has reached its weekly allocation limit of 30 placements. Try other companies.',
+  STUDENT_WEEKLY_CAP: 'You\'ve reached your weekly application limit of 5. New slots open next Monday.',
+  COOLDOWN:           'You recently applied to this job. You must wait for your cooldown period to expire before reapplying.',
+  JOB_NOT_FOUND:      'We couldn\'t find this job in our system. Please verify the Job ID.',
+  COMPANY_MISMATCH:   'The Company ID doesn\'t match this job\'s employer. Please double-check both IDs.',
 };
+
+const SECTIONS = ['home', 'jobs', 'eligibility', 'recommendations', 'profile', 'about'];
 
 // ---------------------------------------------------------------------------
 // Navigation
 // ---------------------------------------------------------------------------
-const sections = ['home', 'jobs', 'eligibility', 'recommendations', 'about'];
-
 function showSection(name) {
-  if (!sections.includes(name)) return;
+  if (!SECTIONS.includes(name)) name = 'home';
 
-  sections.forEach(id => {
+  SECTIONS.forEach(id => {
     const el = document.getElementById(`section-${id}`);
     if (el) el.classList.toggle('active', id === name);
   });
@@ -39,22 +40,24 @@ function showSection(name) {
     link.classList.toggle('active', link.dataset.section === name);
   });
 
-  // Close mobile menu
   closeMenu();
-
-  // Update hash without triggering scroll
   history.replaceState(null, '', `#${name}`);
-
-  // Scroll to top of page
   window.scrollTo({ top: 0, behavior: 'instant' });
+
+  // Lazy-load jobs section on first visit
+  if (name === 'jobs' && !jobsLoaded) {
+    loadJobs();
+  }
 }
 
 function closeMenu() {
   const hamburger = document.getElementById('hamburger');
   const navLinks  = document.getElementById('nav-links');
-  hamburger.classList.remove('open');
-  hamburger.setAttribute('aria-expanded', 'false');
-  navLinks.classList.remove('open');
+  if (hamburger) {
+    hamburger.classList.remove('open');
+    hamburger.setAttribute('aria-expanded', 'false');
+  }
+  if (navLinks) navLinks.classList.remove('open');
 }
 
 // ---------------------------------------------------------------------------
@@ -64,18 +67,19 @@ function isUuid(val) {
   return UUID_RE.test((val || '').trim());
 }
 
-function isFitScore(val) {
-  const n = Number(val);
-  return !isNaN(n) && n >= 0 && n <= 100;
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = String(str || '');
+  return d.innerHTML;
 }
 
 function setFieldError(inputEl, errorEl, msg) {
   if (msg) {
-    inputEl.classList.add('invalid');
-    errorEl.textContent = msg;
+    if (inputEl) inputEl.classList.add('invalid');
+    if (errorEl) errorEl.textContent = msg;
   } else {
-    inputEl.classList.remove('invalid');
-    errorEl.textContent = '';
+    if (inputEl) inputEl.classList.remove('invalid');
+    if (errorEl) errorEl.textContent = '';
   }
 }
 
@@ -86,17 +90,31 @@ function clearFieldError(inputEl, errorEl) {
 function setButtonLoading(btn, loading) {
   const text    = btn.querySelector('.btn-text');
   const spinner = btn.querySelector('.btn-spinner');
-  btn.disabled  = loading;
+  btn.disabled = loading;
   if (text)    text.classList.toggle('hidden', loading);
   if (spinner) spinner.classList.toggle('hidden', !loading);
 }
 
 function showError(el, msg) {
-  el.textContent = '⚠ ' + msg;
+  if (!el) return;
+  el.textContent = '\u26A0 ' + msg;
   el.classList.remove('hidden');
 }
 
 function hideError(el) {
+  if (!el) return;
+  el.classList.add('hidden');
+  el.textContent = '';
+}
+
+function showBanner(el, msg) {
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+function hideBanner(el) {
+  if (!el) return;
   el.classList.add('hidden');
   el.textContent = '';
 }
@@ -104,7 +122,7 @@ function hideError(el) {
 function statusClass(status) {
   if (!status) return 'status-closed';
   const s = status.toUpperCase();
-  if (s === 'OPEN') return 'status-open';
+  if (s === 'OPEN')     return 'status-open';
   if (s === 'REOPENED') return 'status-reopened';
   return 'status-closed';
 }
@@ -115,27 +133,27 @@ function fitBarClass(score) {
   return 'fit-high';
 }
 
-function escHtml(str) {
-  const d = document.createElement('div');
-  d.textContent = str;
-  return d.innerHTML;
-}
-
 // ---------------------------------------------------------------------------
 // Job card template
 // ---------------------------------------------------------------------------
 function buildJobCard(job) {
-  const title    = escHtml(job.title   || 'Untitled Position');
-  const company  = escHtml(job.company || 'Unknown Company');
-  const location = escHtml(job.location || '—');
-  const status   = (job.status || 'CLOSED').toUpperCase();
-  const score    = Math.round(Number(job.fitScore) || 0);
-  const url      = job.url || null;
-  const barClass = fitBarClass(score);
-  const sBadge   = statusClass(status);
+  const title       = escHtml(job.title     || 'Untitled Position');
+  const company     = escHtml(job.company   || 'Unknown Company');
+  const location    = escHtml(job.location  || '\u2014');
+  const description = escHtml(job.description || '');
+  const status      = (job.status || 'CLOSED').toUpperCase();
+  const jobType     = escHtml(job.jobType   || '');
+  const score       = Math.round(Number(job.fitScore || job.fitScoreMin) || 70);
+  const url         = job.url || null;
+  const barClass    = fitBarClass(score);
+  const sBadge      = statusClass(status);
 
-  const applyLink = url
-    ? `<div class="job-card-actions"><a href="${escHtml(url)}" target="_blank" rel="noopener">View posting &rarr;</a></div>`
+  const actionBtn = url
+    ? `<div class="job-card-actions"><a href="${escHtml(url)}" target="_blank" rel="noopener" class="job-view-btn">View Details &#8594;</a></div>`
+    : `<div class="job-card-actions"><button class="job-view-btn" type="button" onclick="void(0)">View Details &#8594;</button></div>`;
+
+  const jobTypeBadge = jobType
+    ? `<span class="job-type-badge">${jobType}</span>`
     : '';
 
   return `
@@ -145,178 +163,163 @@ function buildJobCard(job) {
         <span class="status-badge ${sBadge}">${escHtml(status)}</span>
       </div>
       <div class="job-meta">
-        <span class="job-company">${company}</span>
+        <span class="job-company">&#127970; ${company}</span>
         <span class="job-location">&#128205; ${location}</span>
       </div>
+      ${jobTypeBadge}
+      ${description ? `<p class="job-description">${description}</p>` : ''}
       <div class="job-fit">
         <span class="fit-label">Fit</span>
         <div class="fit-bar-track">
-          <div class="fit-bar-fill ${barClass}" style="width: ${score}%"></div>
+          <div class="fit-bar-fill ${barClass}" style="width: ${score}%" data-width="${score}"></div>
         </div>
         <span class="fit-value">${score}</span>
       </div>
-      ${applyLink}
+      ${actionBtn}
     </article>
   `;
 }
 
+function animateFitBars(container) {
+  requestAnimationFrame(() => {
+    container.querySelectorAll('.fit-bar-fill').forEach(bar => {
+      const target = bar.dataset.width + '%';
+      bar.style.width = '0';
+      setTimeout(() => { bar.style.width = target; }, 40);
+    });
+  });
+}
+
 // ---------------------------------------------------------------------------
-// JOBS section
+// JOBS SECTION
 // ---------------------------------------------------------------------------
-let allJobs = [];
+let jobsLoaded = false;
+let allJobsData = [];
 
-function initJobsSection() {
-  const form        = document.getElementById('jobs-search-form');
-  const studentIn   = document.getElementById('jobs-student-id');
-  const fitIn       = document.getElementById('jobs-fit-score');
-  const studentErr  = document.getElementById('jobs-student-id-error');
-  const fitErr      = document.getElementById('jobs-fit-score-error');
-  const submitBtn   = document.getElementById('jobs-search-btn');
-  const filterInput = document.getElementById('jobs-filter-input');
-  const resultsEl   = document.getElementById('jobs-results');
-  const emptyEl     = document.getElementById('jobs-empty');
-  const errorEl     = document.getElementById('jobs-error');
+function loadJobs(search, status, location) {
+  const resultsEl  = document.getElementById('jobs-results');
+  const emptyEl    = document.getElementById('jobs-empty');
+  const loadingEl  = document.getElementById('jobs-loading');
+  const errorEl    = document.getElementById('jobs-error');
+  const countEl    = document.getElementById('jobs-count');
 
-  // Live validation — clear error on input
-  studentIn.addEventListener('input', () => clearFieldError(studentIn, studentErr));
-  fitIn.addEventListener('input',     () => clearFieldError(fitIn, fitErr));
+  if (!resultsEl) return;
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    hideError(errorEl);
+  jobsLoaded = true;
 
-    const studentId = studentIn.value.trim();
-    const fitScore  = fitIn.value.trim();
+  hideError(errorEl);
+  emptyEl.classList.add('hidden');
+  resultsEl.innerHTML = '';
+  loadingEl.classList.remove('hidden');
+  if (countEl) countEl.textContent = '';
 
-    let valid = true;
+  const params = new URLSearchParams();
+  if (search)   params.set('search',   search);
+  if (status)   params.set('status',   status);
+  if (location) params.set('location', location);
 
-    if (!isUuid(studentId)) {
-      setFieldError(studentIn, studentErr, 'Please enter a valid UUID (e.g. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)');
-      valid = false;
-    } else {
-      clearFieldError(studentIn, studentErr);
-    }
+  const url = `${API_BASE}/api/jobs${params.toString() ? '?' + params.toString() : ''}`;
 
-    if (fitScore === '' || !isFitScore(fitScore)) {
-      setFieldError(fitIn, fitErr, 'Enter a number between 0 and 100');
-      valid = false;
-    } else {
-      clearFieldError(fitIn, fitErr);
-    }
+  fetch(url)
+    .then(res => {
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return res.json();
+    })
+    .then(data => {
+      loadingEl.classList.add('hidden');
+      allJobsData = Array.isArray(data) ? data : [];
 
-    if (!valid) return;
-
-    setButtonLoading(submitBtn, true);
-    emptyEl.classList.add('hidden');
-    resultsEl.innerHTML = '';
-    document.getElementById('jobs-filter-bar').classList.add('hidden');
-
-    try {
-      const url = `${API_BASE}/jobs/recommend?studentId=${encodeURIComponent(studentId)}&fitScore=${encodeURIComponent(fitScore)}`;
-      const res  = await fetch(url);
-      const data = await res.json();
-
-      if (!res.ok) {
-        const msg = data.error || `Request failed (${res.status})`;
-        showError(errorEl, msg);
+      if (allJobsData.length === 0) {
+        emptyEl.classList.remove('hidden');
+        if (countEl) countEl.textContent = '0 jobs';
         return;
       }
 
-      allJobs = Array.isArray(data) ? data : [];
-      renderJobGrid(resultsEl, emptyEl, allJobs, filterInput.value);
-      updateJobCount(allJobs.length);
+      resultsEl.innerHTML = allJobsData.map(buildJobCard).join('');
+      animateFitBars(resultsEl);
 
-      if (allJobs.length > 0) {
-        document.getElementById('jobs-filter-bar').classList.remove('hidden');
+      if (countEl) {
+        countEl.textContent = `${allJobsData.length} job${allJobsData.length !== 1 ? 's' : ''}`;
       }
-    } catch (err) {
-      showError(errorEl, 'Network error — please check your connection and try again.');
-    } finally {
-      setButtonLoading(submitBtn, false);
-    }
-  });
-
-  // Client-side filter
-  filterInput.addEventListener('input', () => {
-    renderJobGrid(resultsEl, emptyEl, allJobs, filterInput.value);
-    updateJobCount();
-  });
+    })
+    .catch(err => {
+      loadingEl.classList.add('hidden');
+      showError(errorEl, 'Could not load jobs. Please check your connection and try again.');
+      console.error(err);
+    });
 }
 
-function renderJobGrid(container, emptyEl, jobs, filterText) {
-  const q = (filterText || '').toLowerCase().trim();
-  const filtered = q
-    ? jobs.filter(j =>
-        (j.title   || '').toLowerCase().includes(q) ||
-        (j.company || '').toLowerCase().includes(q)
-      )
-    : jobs;
+function initJobsSection() {
+  const searchInput  = document.getElementById('jobs-search-input');
+  const statusFilter = document.getElementById('jobs-status-filter');
+  const locationFilter = document.getElementById('jobs-location-filter');
+  const searchBtn    = document.getElementById('jobs-search-btn');
 
-  container.innerHTML = filtered.map(buildJobCard).join('');
-  emptyEl.classList.toggle('hidden', filtered.length > 0);
+  if (!searchBtn) return;
 
-  // Animate fit bars
-  requestAnimationFrame(() => {
-    container.querySelectorAll('.fit-bar-fill').forEach(bar => {
-      const w = bar.style.width;
-      bar.style.width = '0';
-      setTimeout(() => { bar.style.width = w; }, 30);
+  // Trigger search on button click
+  searchBtn.addEventListener('click', () => {
+    const search   = (searchInput   ? searchInput.value.trim()   : '');
+    const status   = (statusFilter  ? statusFilter.value         : '');
+    const location = (locationFilter ? locationFilter.value.trim() : '');
+    loadJobs(search || undefined, status || undefined, location || undefined);
+  });
+
+  // Trigger search on Enter in inputs
+  [searchInput, locationFilter].forEach(input => {
+    if (!input) return;
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') searchBtn.click();
     });
   });
-
-  updateJobCount(filtered.length, jobs.length);
-}
-
-function updateJobCount(shown, total) {
-  const el = document.getElementById('jobs-count');
-  if (!el) return;
-  if (shown === undefined) {
-    el.textContent = '';
-  } else if (total !== undefined && shown !== total) {
-    el.textContent = `${shown} of ${total} jobs`;
-  } else {
-    el.textContent = `${shown} job${shown !== 1 ? 's' : ''}`;
-  }
 }
 
 // ---------------------------------------------------------------------------
-// ELIGIBILITY section
+// ELIGIBILITY SECTION
 // ---------------------------------------------------------------------------
 function initEligibilitySection() {
   const form       = document.getElementById('eligibility-form');
   const studentIn  = document.getElementById('elig-student-id');
   const jobIn      = document.getElementById('elig-job-id');
   const companyIn  = document.getElementById('elig-company-id');
-  const fitIn      = document.getElementById('elig-fit-score');
+  const fitSlider  = document.getElementById('elig-fit-score');
+  const fitDisplay = document.getElementById('elig-fit-score-display');
   const statusSel  = document.getElementById('elig-job-status');
   const studentErr = document.getElementById('elig-student-id-error');
   const jobErr     = document.getElementById('elig-job-id-error');
   const companyErr = document.getElementById('elig-company-id-error');
-  const fitErr     = document.getElementById('elig-fit-score-error');
   const submitBtn  = document.getElementById('elig-submit-btn');
   const resultEl   = document.getElementById('elig-result-panel');
   const errorEl    = document.getElementById('elig-error');
 
-  [studentIn, jobIn, companyIn].forEach((el, i) => {
-    const errEl = [studentErr, jobErr, companyErr][i];
-    el.addEventListener('input', () => clearFieldError(el, errEl));
-  });
-  fitIn.addEventListener('input', () => clearFieldError(fitIn, fitErr));
+  if (!form) return;
+
+  // Live slider display
+  if (fitSlider && fitDisplay) {
+    fitSlider.addEventListener('input', () => {
+      fitDisplay.textContent = fitSlider.value;
+    });
+  }
+
+  // Live validation clearing
+  if (studentIn) studentIn.addEventListener('input', () => clearFieldError(studentIn, studentErr));
+  if (jobIn)     jobIn.addEventListener('input',     () => clearFieldError(jobIn, jobErr));
+  if (companyIn) companyIn.addEventListener('input', () => clearFieldError(companyIn, companyErr));
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     hideError(errorEl);
 
-    const studentId = studentIn.value.trim();
-    const jobId     = jobIn.value.trim();
-    const companyId = companyIn.value.trim();
-    const fitScore  = fitIn.value.trim();
-    const jobStatus = statusSel.value;
+    const studentId = studentIn ? studentIn.value.trim() : '';
+    const jobId     = jobIn     ? jobIn.value.trim()     : '';
+    const companyId = companyIn ? companyIn.value.trim() : '';
+    const fitScore  = fitSlider ? fitSlider.value        : '75';
+    const jobStatus = statusSel ? statusSel.value        : 'OPEN';
 
     let valid = true;
 
     if (!isUuid(studentId)) {
-      setFieldError(studentIn, studentErr, 'Please enter a valid UUID');
+      setFieldError(studentIn, studentErr, 'Please enter a valid UUID (e.g. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)');
       valid = false;
     } else { clearFieldError(studentIn, studentErr); }
 
@@ -330,11 +333,6 @@ function initEligibilitySection() {
       valid = false;
     } else { clearFieldError(companyIn, companyErr); }
 
-    if (fitScore === '' || !isFitScore(fitScore)) {
-      setFieldError(fitIn, fitErr, 'Enter a number between 0 and 100');
-      valid = false;
-    } else { clearFieldError(fitIn, fitErr); }
-
     if (!valid) return;
 
     setButtonLoading(submitBtn, true);
@@ -347,21 +345,21 @@ function initEligibilitySection() {
 
       if (!res.ok && res.status !== 422) {
         showError(errorEl, data.error || `Request failed (${res.status})`);
-        resultEl.innerHTML = getPlaceholderHTML();
+        resultEl.innerHTML = getEligibilityPlaceholderHTML();
         return;
       }
 
       renderEligibilityResult(resultEl, data);
     } catch (err) {
       showError(errorEl, 'Network error — please check your connection and try again.');
-      resultEl.innerHTML = getPlaceholderHTML();
+      resultEl.innerHTML = getEligibilityPlaceholderHTML();
     } finally {
       setButtonLoading(submitBtn, false);
     }
   });
 }
 
-function getPlaceholderHTML() {
+function getEligibilityPlaceholderHTML() {
   return `
     <div class="result-placeholder">
       <div class="result-placeholder-icon">&#128270;</div>
@@ -371,8 +369,8 @@ function getPlaceholderHTML() {
 }
 
 function renderEligibilityResult(container, data) {
-  const allowed = data.allowed === true;
-  const reason  = data.reason || null;
+  const allowed     = data.allowed === true;
+  const reason      = data.reason || null;
   const humanReason = reason ? (REASON_MESSAGES[reason] || reason) : null;
 
   if (allowed) {
@@ -380,7 +378,7 @@ function renderEligibilityResult(container, data) {
       <div class="result-eligible">
         <div class="result-status-row">
           <span class="result-icon">&#9989;</span>
-          <span class="result-status-text">Eligible for Allocation</span>
+          <span class="result-status-text">Eligible!</span>
         </div>
         <div class="result-reason-box">
           <div class="result-reason-label">Status</div>
@@ -410,29 +408,37 @@ function renderEligibilityResult(container, data) {
 }
 
 // ---------------------------------------------------------------------------
-// RECOMMENDATIONS section
+// RECOMMENDATIONS SECTION
 // ---------------------------------------------------------------------------
 function initRecommendationsSection() {
   const form       = document.getElementById('rec-form');
   const studentIn  = document.getElementById('rec-student-id');
-  const fitIn      = document.getElementById('rec-fit-score');
+  const fitSlider  = document.getElementById('rec-fit-score');
+  const fitDisplay = document.getElementById('rec-fit-score-display');
   const studentErr = document.getElementById('rec-student-id-error');
-  const fitErr     = document.getElementById('rec-fit-score-error');
   const submitBtn  = document.getElementById('rec-submit-btn');
   const resultsEl  = document.getElementById('rec-results');
   const emptyEl    = document.getElementById('rec-empty');
   const loadingEl  = document.getElementById('rec-loading');
   const errorEl    = document.getElementById('rec-error');
 
-  studentIn.addEventListener('input', () => clearFieldError(studentIn, studentErr));
-  fitIn.addEventListener('input',     () => clearFieldError(fitIn, fitErr));
+  if (!form) return;
+
+  // Live slider display
+  if (fitSlider && fitDisplay) {
+    fitSlider.addEventListener('input', () => {
+      fitDisplay.textContent = fitSlider.value;
+    });
+  }
+
+  if (studentIn) studentIn.addEventListener('input', () => clearFieldError(studentIn, studentErr));
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     hideError(errorEl);
 
-    const studentId = studentIn.value.trim();
-    const fitScore  = fitIn.value.trim();
+    const studentId = studentIn ? studentIn.value.trim() : '';
+    const fitScore  = fitSlider ? fitSlider.value : '75';
 
     let valid = true;
 
@@ -441,17 +447,12 @@ function initRecommendationsSection() {
       valid = false;
     } else { clearFieldError(studentIn, studentErr); }
 
-    if (fitScore === '' || !isFitScore(fitScore)) {
-      setFieldError(fitIn, fitErr, 'Enter a number between 0 and 100');
-      valid = false;
-    } else { clearFieldError(fitIn, fitErr); }
-
     if (!valid) return;
 
     setButtonLoading(submitBtn, true);
-    resultsEl.innerHTML = '';
-    emptyEl.classList.add('hidden');
-    loadingEl.classList.remove('hidden');
+    if (resultsEl) resultsEl.innerHTML = '';
+    if (emptyEl)   emptyEl.classList.add('hidden');
+    if (loadingEl) loadingEl.classList.remove('hidden');
 
     try {
       const url  = `${API_BASE}/jobs/recommend?studentId=${encodeURIComponent(studentId)}&fitScore=${encodeURIComponent(fitScore)}`;
@@ -465,24 +466,319 @@ function initRecommendationsSection() {
       }
 
       const jobs = Array.isArray(data) ? data : [];
-      resultsEl.innerHTML = jobs.map(buildJobCard).join('');
-      emptyEl.classList.toggle('hidden', jobs.length > 0);
-
-      if (jobs.length > 0) {
-        requestAnimationFrame(() => {
-          resultsEl.querySelectorAll('.fit-bar-fill').forEach(bar => {
-            const w = bar.style.width;
-            bar.style.width = '0';
-            setTimeout(() => { bar.style.width = w; }, 30);
-          });
-        });
+      if (resultsEl) {
+        resultsEl.innerHTML = jobs.map(buildJobCard).join('');
+        if (jobs.length > 0) animateFitBars(resultsEl);
       }
+      if (emptyEl) emptyEl.classList.toggle('hidden', jobs.length > 0);
+
     } catch (err) {
       showError(errorEl, 'Network error — please check your connection and try again.');
     } finally {
       setButtonLoading(submitBtn, false);
-      loadingEl.classList.add('hidden');
+      if (loadingEl) loadingEl.classList.add('hidden');
     }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// TAGS INPUT
+// ---------------------------------------------------------------------------
+function initTagsInput(wrapperId, tagsContainerId, inputId) {
+  const wrapper   = document.getElementById(wrapperId);
+  const container = document.getElementById(tagsContainerId);
+  const input     = document.getElementById(inputId);
+
+  if (!wrapper || !container || !input) return { getTags: () => [] };
+
+  const tags = [];
+
+  function render() {
+    container.innerHTML = tags.map((tag, i) =>
+      `<span class="tag-chip">
+        ${escHtml(tag)}
+        <button type="button" class="tag-chip-remove" data-index="${i}" aria-label="Remove ${escHtml(tag)}">&#10005;</button>
+      </span>`
+    ).join('');
+
+    // Attach remove listeners
+    container.querySelectorAll('.tag-chip-remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.index, 10);
+        tags.splice(idx, 1);
+        render();
+      });
+    });
+  }
+
+  function addTag(value) {
+    const trimmed = value.trim();
+    if (trimmed && !tags.includes(trimmed)) {
+      tags.push(trimmed);
+      render();
+    }
+    input.value = '';
+  }
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addTag(input.value);
+    }
+    // Backspace on empty input removes last tag
+    if (e.key === 'Backspace' && input.value === '' && tags.length > 0) {
+      tags.pop();
+      render();
+    }
+  });
+
+  input.addEventListener('blur', () => {
+    if (input.value.trim()) addTag(input.value);
+  });
+
+  // Click wrapper to focus input
+  wrapper.addEventListener('click', () => input.focus());
+
+  return { getTags: () => [...tags] };
+}
+
+// ---------------------------------------------------------------------------
+// PROFILE SECTION
+// ---------------------------------------------------------------------------
+function initProfileSection() {
+  const form           = document.getElementById('profile-form');
+  const submitBtn      = document.getElementById('profile-submit-btn');
+  const successBanner  = document.getElementById('profile-success');
+  const errorBanner    = document.getElementById('profile-error');
+
+  if (!form) return;
+
+  // Profile picture preview
+  const picBtn   = document.getElementById('profile-picture-btn');
+  const picInput = document.getElementById('profile-picture-input');
+  const picImg   = document.getElementById('profile-picture-img');
+  const picHolder = document.getElementById('profile-picture-placeholder');
+  const picPreview = document.getElementById('profile-picture-preview');
+
+  if (picBtn && picInput) {
+    picBtn.addEventListener('click', () => picInput.click());
+    picPreview.addEventListener('click', () => picInput.click());
+
+    picInput.addEventListener('change', () => {
+      const file = picInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (picImg) {
+          picImg.src = e.target.result;
+          picImg.classList.remove('hidden');
+        }
+        if (picHolder) picHolder.classList.add('hidden');
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Summary character counter
+  const summaryTextarea = document.getElementById('pf-summary');
+  const summaryCount    = document.getElementById('pf-summary-count');
+  if (summaryTextarea && summaryCount) {
+    summaryTextarea.addEventListener('input', () => {
+      summaryCount.textContent = summaryTextarea.value.length;
+    });
+  }
+
+  // Resume drag & drop
+  const dropArea     = document.getElementById('resume-drop-area');
+  const resumeInput  = document.getElementById('resume-input');
+  const browseBtn    = document.getElementById('resume-browse-btn');
+  const fileDisplay  = document.getElementById('resume-file-display');
+  const fileName     = document.getElementById('resume-file-name');
+  const removeBtn    = document.getElementById('resume-remove-btn');
+
+  if (browseBtn && resumeInput) {
+    browseBtn.addEventListener('click', () => resumeInput.click());
+  }
+
+  if (dropArea && resumeInput) {
+    dropArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropArea.classList.add('drag-over');
+    });
+
+    dropArea.addEventListener('dragleave', () => {
+      dropArea.classList.remove('drag-over');
+    });
+
+    dropArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropArea.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) handleResumeFile(file);
+    });
+
+    resumeInput.addEventListener('change', () => {
+      if (resumeInput.files[0]) handleResumeFile(resumeInput.files[0]);
+    });
+  }
+
+  function handleResumeFile(file) {
+    if (!fileDisplay || !fileName || !dropArea) return;
+    fileName.textContent = file.name;
+    fileDisplay.classList.remove('hidden');
+    dropArea.classList.add('hidden');
+  }
+
+  if (removeBtn && fileDisplay && dropArea) {
+    removeBtn.addEventListener('click', () => {
+      fileDisplay.classList.add('hidden');
+      dropArea.classList.remove('hidden');
+      if (resumeInput) resumeInput.value = '';
+    });
+  }
+
+  // Initialize all tag inputs and capture their getters
+  const tagsMap = {
+    preferred_titles:    initTagsInput('preferred-titles-wrapper', 'preferred-titles-tags', 'preferred-titles-input'),
+    industries:          initTagsInput('industries-wrapper',        'industries-tags',        'industries-input'),
+    skills:              initTagsInput('skills-wrapper',            'skills-tags',            'skills-input'),
+    certifications:      initTagsInput('certifications-wrapper',    'certifications-tags',    'certifications-input'),
+    preferred_companies: initTagsInput('preferred-companies-wrapper', 'preferred-companies-tags', 'preferred-companies-input'),
+  };
+
+  // Form submit
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideBanner(successBanner);
+    hideError(errorBanner);
+
+    const fullName = document.getElementById('pf-full-name');
+    const email    = document.getElementById('pf-email');
+    const fullNameErr = document.getElementById('pf-full-name-error');
+    const emailErr    = document.getElementById('pf-email-error');
+
+    let valid = true;
+
+    if (!fullName || !fullName.value.trim()) {
+      setFieldError(fullName, fullNameErr, 'Full name is required');
+      valid = false;
+    } else { clearFieldError(fullName, fullNameErr); }
+
+    if (!email || !email.value.trim()) {
+      setFieldError(email, emailErr, 'Email address is required');
+      valid = false;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
+      setFieldError(email, emailErr, 'Please enter a valid email address');
+      valid = false;
+    } else { clearFieldError(email, emailErr); }
+
+    if (!valid) return;
+
+    // Gather job types
+    const jobTypeCheckboxes = form.querySelectorAll('input[name="job_types"]:checked');
+    const jobTypes = Array.from(jobTypeCheckboxes).map(cb => cb.value);
+
+    // Gather work setting
+    const workSettingRadio = form.querySelector('input[name="work_setting"]:checked');
+    const workSetting = workSettingRadio ? workSettingRadio.value : 'ANY';
+
+    const payload = {
+      full_name:           fullName.value.trim(),
+      email:               email.value.trim().toLowerCase(),
+      phone:               getVal('pf-phone'),
+      city:                getVal('pf-city'),
+      state:               getVal('pf-state'),
+      preferred_titles:    tagsMap.preferred_titles.getTags(),
+      job_types:           jobTypes.length > 0 ? jobTypes : null,
+      work_setting:        workSetting,
+      salary_min:          getNumVal('pf-salary-min'),
+      salary_max:          getNumVal('pf-salary-max'),
+      years_experience:    getNumVal('pf-years-exp'),
+      industries:          tagsMap.industries.getTags(),
+      timeframe:           getVal('pf-timeframe'),
+      linkedin_url:        getVal('pf-linkedin'),
+      portfolio_url:       getVal('pf-portfolio'),
+      skills:              tagsMap.skills.getTags(),
+      certifications:      tagsMap.certifications.getTags(),
+      education:           getVal('pf-education'),
+      work_authorization:  getVal('pf-work-auth'),
+      availability_date:   getVal('pf-availability') || null,
+      preferred_companies: tagsMap.preferred_companies.getTags(),
+      summary:             getVal('pf-summary'),
+    };
+
+    setButtonLoading(submitBtn, true);
+
+    try {
+      const res  = await fetch(`${API_BASE}/api/candidates`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showError(errorBanner, data.error || `Submission failed (${res.status})`);
+        return;
+      }
+
+      showBanner(successBanner, 'Your profile has been saved successfully! \uD83C\uDF89');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    } catch (err) {
+      showError(errorBanner, 'Network error — please check your connection and try again.');
+    } finally {
+      setButtonLoading(submitBtn, false);
+    }
+  });
+
+  // Live clear errors on required fields
+  ['pf-full-name', 'pf-email'].forEach(id => {
+    const el  = document.getElementById(id);
+    const err = document.getElementById(id + '-error');
+    if (el) el.addEventListener('input', () => clearFieldError(el, err));
+  });
+}
+
+function getVal(id) {
+  const el = document.getElementById(id);
+  if (!el) return null;
+  const v = el.value.trim();
+  return v || null;
+}
+
+function getNumVal(id) {
+  const el = document.getElementById(id);
+  if (!el || !el.value.trim()) return null;
+  const n = Number(el.value);
+  return isNaN(n) ? null : n;
+}
+
+// ---------------------------------------------------------------------------
+// FAQ ACCORDION
+// ---------------------------------------------------------------------------
+function initFaqAccordion() {
+  const faqList = document.getElementById('faq-list');
+  if (!faqList) return;
+
+  faqList.querySelectorAll('.faq-question').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const isOpen   = btn.getAttribute('aria-expanded') === 'true';
+      const answer   = btn.nextElementSibling;
+
+      // Close all
+      faqList.querySelectorAll('.faq-question').forEach(b => {
+        b.setAttribute('aria-expanded', 'false');
+        const a = b.nextElementSibling;
+        if (a) a.classList.remove('open');
+      });
+
+      // Toggle current
+      if (!isOpen) {
+        btn.setAttribute('aria-expanded', 'true');
+        if (answer) answer.classList.add('open');
+      }
+    });
   });
 }
 
@@ -491,7 +787,7 @@ function initRecommendationsSection() {
 // ---------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
 
-  // ----- Nav: link clicks -----
+  // ----- Nav: link clicks (data-section) -----
   document.querySelectorAll('[data-section]').forEach(el => {
     el.addEventListener('click', (e) => {
       e.preventDefault();
@@ -507,35 +803,41 @@ document.addEventListener('DOMContentLoaded', () => {
   // ----- Hamburger -----
   const hamburger = document.getElementById('hamburger');
   const navLinks  = document.getElementById('nav-links');
-  hamburger.addEventListener('click', () => {
-    const isOpen = navLinks.classList.toggle('open');
-    hamburger.classList.toggle('open', isOpen);
-    hamburger.setAttribute('aria-expanded', String(isOpen));
-  });
+  if (hamburger && navLinks) {
+    hamburger.addEventListener('click', () => {
+      const isOpen = navLinks.classList.toggle('open');
+      hamburger.classList.toggle('open', isOpen);
+      hamburger.setAttribute('aria-expanded', String(isOpen));
+    });
 
-  // Close menu when clicking outside
-  document.addEventListener('click', (e) => {
-    if (!hamburger.contains(e.target) && !navLinks.contains(e.target)) {
-      closeMenu();
-    }
-  });
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!hamburger.contains(e.target) && !navLinks.contains(e.target)) {
+        closeMenu();
+      }
+    });
+  }
 
-  // ----- Scroll: navbar shadow -----
+  // ----- Navbar shadow on scroll -----
   const navbar = document.getElementById('navbar');
-  window.addEventListener('scroll', () => {
-    navbar.style.boxShadow = window.scrollY > 8
-      ? '0 2px 16px rgba(0,0,0,0.12)'
-      : '0 1px 4px rgba(0,0,0,0.06)';
-  }, { passive: true });
+  if (navbar) {
+    window.addEventListener('scroll', () => {
+      navbar.style.boxShadow = window.scrollY > 8
+        ? '0 2px 16px rgba(0,0,0,0.12)'
+        : 'var(--shadow-sm)';
+    }, { passive: true });
+  }
 
-  // ----- Init sections -----
+  // ----- Init all sections -----
   initJobsSection();
   initEligibilitySection();
   initRecommendationsSection();
+  initProfileSection();
+  initFaqAccordion();
 
-  // ----- Hash routing -----
+  // ----- Hash-based routing -----
   const hash = window.location.hash.replace('#', '').toLowerCase();
-  if (sections.includes(hash)) {
+  if (SECTIONS.includes(hash)) {
     showSection(hash);
   } else {
     showSection('home');
@@ -544,6 +846,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Handle browser back/forward
   window.addEventListener('popstate', () => {
     const h = window.location.hash.replace('#', '').toLowerCase();
-    if (sections.includes(h)) showSection(h);
+    showSection(SECTIONS.includes(h) ? h : 'home');
   });
 });
