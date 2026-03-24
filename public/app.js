@@ -1,5 +1,5 @@
 /* =========================================
-   AllocateIQ — app.js
+   CareerBridge — app.js
    Single-page navigation + API integration
    Pure vanilla JS, no external libraries
    ========================================= */

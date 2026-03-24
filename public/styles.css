@@ -91,6 +91,21 @@ body {
   flex-shrink: 0;
 }
 
+.brand-name-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.1;
+}
+
+.brand-tagline {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--text-light);
+  letter-spacing: 0.1px;
+  white-space: nowrap;
+}
+
 .nav-links {
   display: flex;
   list-style: none;
@@ -237,6 +252,27 @@ body {
   display: flex;
   gap: 14px;
   flex-wrap: wrap;
+}
+
+.hero-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--white);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-mid);
+  box-shadow: var(--shadow-sm);
 }
 
 .hero-stats {
