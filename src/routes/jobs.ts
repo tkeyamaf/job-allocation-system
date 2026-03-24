@@ -49,9 +49,9 @@ router.get('/jobs', async (req: Request, res: Response) => {
 
     const result = await pool.query(query, params);
 
-    // If no jobs in DB, fall back to sample jobs
+    // If no jobs in DB, fall back to JSearch / sample jobs
     if (result.rows.length === 0) {
-      const sampleJobs = getSampleJobs();
+      const sampleJobs = await getSampleJobs(typeof search === 'string' && search.trim() ? search.trim() : 'software engineer');
 
       // Apply filters to sample jobs
       let filtered = sampleJobs;
@@ -82,7 +82,7 @@ router.get('/jobs', async (req: Request, res: Response) => {
     console.error('Error fetching jobs:', err);
     // Never crash — return sample jobs as fallback
     try {
-      res.json(getSampleJobs());
+      res.json(await getSampleJobs());
     } catch {
       res.json([]);
     }
