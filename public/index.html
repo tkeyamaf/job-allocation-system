@@ -31,10 +31,35 @@
         <li><a href="#jobs"            class="nav-link" data-section="jobs">Jobs</a></li>
         <li><a href="#eligibility"     class="nav-link" data-section="eligibility">Eligibility</a></li>
         <li><a href="#recommendations" class="nav-link" data-section="recommendations">Recommendations</a></li>
-        <li><a href="#profile"         class="nav-link" data-section="profile">Profile</a></li>
-        <li><a href="#applications"    class="nav-link" data-section="applications">My Applications</a></li>
         <li><a href="#about"           class="nav-link" data-section="about">About</a></li>
       </ul>
+      <!-- Auth controls — toggled by JS -->
+      <div class="nav-auth" id="nav-auth">
+        <button class="btn btn-ghost btn-sm" id="btn-nav-login">Log In</button>
+        <button class="btn btn-primary btn-sm" id="btn-nav-signup">Sign Up</button>
+      </div>
+      <div class="nav-user" id="nav-user" style="display:none">
+        <button class="nav-user-btn" id="nav-user-btn" aria-haspopup="true" aria-expanded="false">
+          <span class="nav-avatar" id="nav-avatar">?</span>
+          <span class="nav-user-name" id="nav-user-name">User</span>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+        <div class="nav-dropdown" id="nav-dropdown">
+          <a href="#dashboard" class="dropdown-item" data-section="dashboard">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+            Dashboard
+          </a>
+          <a href="#profile" class="dropdown-item" data-section="profile">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 14c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            My Profile
+          </a>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item dropdown-item--danger" id="btn-logout">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 8H2m0 0l3-3M2 8l3 3M6 4V2h8v12H6v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Log Out
+          </button>
+        </div>
+      </div>
     </div>
   </nav>
 
@@ -50,11 +75,11 @@
             <div class="hero-badge">Smart Career Matching for Everyone</div>
             <h1 class="hero-title">Everyone Deserves a Career <span class="accent">They Love</span></h1>
             <p class="hero-sub">
-              Whether you're a recent grad, a career changer, or a professional ready for more — CareerBridge connects you to high-paying opportunities that match your skills, fit your life, and fuel your ambition.
+              Whether you're a recent grad, a career changer, or a seasoned professional ready for more — CareerBridge connects you to high-paying opportunities that match your skills, fit your life, and fuel your ambition.
             </p>
             <div class="hero-cta">
-              <button class="btn btn-primary btn-lg" data-nav="jobs">Find My Career</button>
-              <button class="btn btn-outline btn-lg" data-nav="eligibility">Check My Eligibility</button>
+              <button class="btn btn-primary btn-lg" id="btn-hero-signup">Get Started Free</button>
+              <button class="btn btn-outline btn-lg" data-nav="jobs">Browse Jobs</button>
             </div>
             <div class="hero-pills">
               <span class="hero-pill">💰 Jobs That Pay What You're Worth</span>
@@ -79,900 +104,833 @@
         </div>
       </div>
 
-      <!-- Benefits Section -->
+      <!-- Trust / Company logos -->
+      <div class="trust-section">
+        <div class="section-inner">
+          <h2 class="section-title">Helping Thousands Land Jobs at Top Companies</h2>
+          <p class="section-sub">Our platform has helped candidates get hired at some of the world's most sought-after employers</p>
+          <div class="company-logos-grid">
+            <span class="company-logo company-logo--google">Google</span>
+            <span class="company-logo company-logo--apple">Apple</span>
+            <span class="company-logo company-logo--microsoft">Microsoft</span>
+            <span class="company-logo company-logo--amazon">Amazon</span>
+            <span class="company-logo company-logo--meta">Meta</span>
+            <span class="company-logo company-logo--netflix">Netflix</span>
+            <span class="company-logo company-logo--salesforce">Salesforce</span>
+            <span class="company-logo company-logo--deloitte">Deloitte</span>
+            <span class="company-logo company-logo--jpmorgan">JPMorgan</span>
+            <span class="company-logo company-logo--mckinsey">McKinsey</span>
+            <span class="company-logo company-logo--tesla">Tesla</span>
+            <span class="company-logo company-logo--adobe">Adobe</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Benefits -->
       <div class="benefits-section">
         <div class="section-inner">
           <h2 class="section-title">Why CareerBridge?</h2>
-          <p class="section-sub">No matter who you are — a first-time job seeker, a seasoned professional, or someone ready for a change — you deserve a career that pays well, feels meaningful, and excites you every day. CareerBridge makes that possible.</p>
+          <p class="section-sub">No matter who you are — a first-time job seeker, a seasoned professional, or someone ready for a change — you deserve a career that pays well, feels meaningful, and excites you every day.</p>
           <div class="benefits-grid">
             <div class="benefit-card">
-              <div class="benefit-icon">&#127919;</div>
-              <h3>Matched to You</h3>
+              <div class="benefit-icon">🎯</div>
+              <h3>Personalized Matches</h3>
               <p>Our smart matching considers your skills, experience, and what you actually want — not just keywords.</p>
             </div>
             <div class="benefit-card">
-              <div class="benefit-icon">&#9989;</div>
+              <div class="benefit-icon">✅</div>
               <h3>Know Before You Apply</h3>
-              <p>Check your eligibility instantly. No wasted applications, no surprises.</p>
+              <p>Check your eligibility instantly. No wasted applications, no surprises — ever.</p>
             </div>
             <div class="benefit-card">
-              <div class="benefit-icon">&#128640;</div>
+              <div class="benefit-icon">🚀</div>
               <h3>Built for Ambition</h3>
-              <p>Whether you want more money, more flexibility, or more meaning — we find roles that deliver all three.</p>
+              <p>Whether you want a raise, a new industry, or a total career change — we have paths for every goal.</p>
             </div>
             <div class="benefit-card">
-              <div class="benefit-icon">&#128274;</div>
+              <div class="benefit-icon">⚖️</div>
               <h3>Fair &amp; Transparent</h3>
-              <p>Clear rules and honest matching. You always know exactly where you stand.</p>
+              <p>Clear eligibility rules, visible fit scores, and honest salary ranges. No hidden barriers.</p>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Companies Section -->
-      <section class="companies-section">
-        <div class="container">
-          <p class="companies-label">People Using CareerBridge Get Hired At</p>
-          <p class="companies-subtitle">Join thousands of professionals who found their dream careers</p>
-          <div class="companies-grid">
-            <div class="company-badge company-google">Google</div>
-            <div class="company-badge company-apple">Apple</div>
-            <div class="company-badge company-microsoft">Microsoft</div>
-            <div class="company-badge company-amazon">Amazon</div>
-            <div class="company-badge company-meta">Meta</div>
-            <div class="company-badge company-netflix">Netflix</div>
-            <div class="company-badge company-salesforce">Salesforce</div>
-            <div class="company-badge company-deloitte">Deloitte</div>
-            <div class="company-badge company-jpmorgan">JPMorgan</div>
-            <div class="company-badge company-mckinsey">McKinsey</div>
-          </div>
-          <div class="companies-stats">
-            <div class="stat">10,000+ <span>Placements</span></div>
-            <div class="stat">500+ <span>Partner Companies</span></div>
-            <div class="stat">98% <span>Satisfaction Rate</span></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- How It Works -->
-      <div class="how-it-works">
+      <!-- How it works -->
+      <div class="how-section">
         <div class="section-inner">
           <h2 class="section-title">How It Works</h2>
-          <p class="section-sub">Three simple steps to your next opportunity.</p>
+          <p class="section-sub">From sign-up to job offer in four simple steps</p>
           <div class="steps-grid">
             <div class="step-card">
-              <div class="step-number">1</div>
-              <h3>Tell Us About You</h3>
-              <p>Share your skills, goals, salary expectations, and what your dream career looks like.</p>
+              <div class="step-num">1</div>
+              <h3>Create Your Free Account</h3>
+              <p>Sign up in under 60 seconds. Get your personal student number and access to the full platform.</p>
             </div>
-            <div class="step-connector" aria-hidden="true"></div>
             <div class="step-card">
-              <div class="step-number">2</div>
-              <h3>We Find Your Match</h3>
-              <p>CareerBridge scans opportunities and surfaces roles that actually fit your life and ambitions.</p>
+              <div class="step-num">2</div>
+              <h3>Complete Your Profile</h3>
+              <p>Tell us about your skills, experience, and goals. The more you share, the better your matches.</p>
             </div>
-            <div class="step-connector" aria-hidden="true"></div>
             <div class="step-card">
-              <div class="step-number">3</div>
+              <div class="step-num">3</div>
+              <h3>Get Matched to Jobs</h3>
+              <p>Our algorithm finds roles that fit your profile. Check eligibility before you spend a second applying.</p>
+            </div>
+            <div class="step-card">
+              <div class="step-num">4</div>
               <h3>Apply with Confidence</h3>
-              <p>Know your eligibility before you apply. No guesswork, no wasted effort.</p>
+              <p>Track every application in your dashboard. Use AI resume and interview prep to stand out.</p>
             </div>
           </div>
         </div>
       </div>
 
-    </section>
+      <!-- AI Features -->
+      <div class="ai-section">
+        <div class="section-inner">
+          <div class="ai-badge">✨ Powered by AI</div>
+          <h2 class="section-title">AI Tools That Give You the Edge</h2>
+          <p class="section-sub">Cut prep time in half. Walk into every application ready.</p>
+          <div class="ai-features-grid">
+            <div class="ai-feature-card">
+              <div class="ai-feature-icon">📄</div>
+              <h3>AI Resume Builder</h3>
+              <p>No resume? No problem. Tell us about yourself and our AI builds a professional resume in seconds — tailored to the exact job you're targeting.</p>
+              <button class="btn btn-outline btn-sm" data-nav="about">Learn More</button>
+            </div>
+            <div class="ai-feature-card">
+              <div class="ai-feature-icon">🎯</div>
+              <h3>AI Interview Prep</h3>
+              <p>Practice for your interview with AI-generated questions tailored to the exact job you're applying for. Get instant feedback and model answers.</p>
+              <button class="btn btn-outline btn-sm" data-nav="about">Learn More</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Final CTA -->
+      <div class="final-cta-section">
+        <div class="section-inner text-center">
+          <h2>Ready to Find the Career You Deserve?</h2>
+          <p>Join thousands of professionals who've already found their dream jobs through CareerBridge.</p>
+          <div class="hero-cta" style="justify-content:center; margin-top: 24px;">
+            <button class="btn btn-primary btn-lg" id="btn-home-cta-signup">Create Free Account</button>
+            <button class="btn btn-outline btn-lg" data-nav="jobs">Browse Jobs</button>
+          </div>
+        </div>
+      </div>
+
+    </section><!-- /home -->
 
     <!-- ===== JOBS SECTION ===== -->
     <section id="section-jobs" class="section">
-      <div class="page-header">
-        <h2 class="page-title">Available Jobs</h2>
-        <p class="page-sub">Browse current openings and find roles that match your profile.</p>
-      </div>
-
-      <div class="jobs-controls">
-        <div class="jobs-search-bar">
-          <span class="search-icon" aria-hidden="true">&#128269;</span>
-          <input type="text" id="jobs-search-input" class="jobs-search-field" placeholder="Search by title or company..." autocomplete="off" />
+      <div class="section-inner">
+        <div class="page-header">
+          <h1 class="page-title">Browse Jobs</h1>
+          <p class="page-sub">Explore open positions and find your perfect match</p>
         </div>
-        <div class="jobs-filter-row">
+
+        <!-- Search & Filters -->
+        <div class="jobs-search-bar">
+          <div class="search-input-wrap">
+            <svg class="search-icon" width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="#718096" stroke-width="1.5"/><path d="M12 12l4 4" stroke="#718096" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <input type="text" id="jobs-search" class="search-input" placeholder="Search job title or company…" autocomplete="off" />
+          </div>
           <select id="jobs-status-filter" class="filter-select">
             <option value="">All Statuses</option>
             <option value="OPEN">Open</option>
             <option value="REOPENED">Reopened</option>
             <option value="CLOSED">Closed</option>
           </select>
-          <input type="text" id="jobs-location-filter" class="filter-input-sm" placeholder="Location..." autocomplete="off" />
-          <button id="jobs-search-btn" class="btn btn-primary">
-            <span class="btn-text">Search</span>
-            <span class="btn-spinner hidden"></span>
-          </button>
+          <input type="text" id="jobs-location-filter" class="filter-input" placeholder="Filter by location…" />
+          <button class="btn btn-primary" id="jobs-search-btn">Search</button>
+        </div>
+
+        <!-- Logged-in fit score badge -->
+        <div id="jobs-fit-badge" style="display:none" class="fit-badge-bar">
+          <span>Your Fit Score: </span><strong id="jobs-fit-score-val">—</strong>
+        </div>
+
+        <!-- Jobs grid -->
+        <div id="jobs-grid" class="jobs-grid">
+          <!-- Skeleton cards shown while loading -->
+          <div class="job-card skeleton-card"><div class="skel skel-h"></div><div class="skel skel-m"></div><div class="skel skel-s"></div></div>
+          <div class="job-card skeleton-card"><div class="skel skel-h"></div><div class="skel skel-m"></div><div class="skel skel-s"></div></div>
+          <div class="job-card skeleton-card"><div class="skel skel-h"></div><div class="skel skel-m"></div><div class="skel skel-s"></div></div>
+        </div>
+
+        <div id="jobs-empty" class="empty-state" style="display:none">
+          <div class="empty-icon">🔍</div>
+          <h3>No jobs found</h3>
+          <p>Try adjusting your search or filters.</p>
+        </div>
+        <div id="jobs-error" class="error-state" style="display:none">
+          <div class="empty-icon">⚠️</div>
+          <h3>Could not load jobs</h3>
+          <p>Please check your connection and try again.</p>
+          <button class="btn btn-primary" id="jobs-retry-btn">Retry</button>
         </div>
       </div>
-
-      <div class="jobs-meta-row">
-        <span id="jobs-count" class="results-count"></span>
-      </div>
-
-      <div id="jobs-loading" class="skeleton-grid hidden">
-        <div class="skeleton-card"></div>
-        <div class="skeleton-card"></div>
-        <div class="skeleton-card"></div>
-        <div class="skeleton-card"></div>
-        <div class="skeleton-card"></div>
-        <div class="skeleton-card"></div>
-      </div>
-
-      <div id="jobs-results" class="jobs-grid"></div>
-
-      <div id="jobs-empty" class="empty-state hidden">
-        <div class="empty-icon">&#128269;</div>
-        <p class="empty-title">No jobs found matching your search</p>
-        <p class="empty-sub">Try adjusting your filters or search terms and try again.</p>
-      </div>
-
-      <div id="jobs-error" class="error-banner hidden"></div>
-    </section>
-
-    <!-- ===== MY APPLICATIONS SECTION ===== -->
-    <section id="section-applications" class="section">
-      <div class="page-header">
-        <h2 class="page-title">My Applications</h2>
-        <p class="page-sub">Track all your job applications in one place.</p>
-      </div>
-
-      <div class="applications-wrapper">
-        <div class="applications-toolbar">
-          <button class="btn btn-primary" onclick="showAddApplicationModal()">+ Track New Application</button>
-        </div>
-        <div id="applications-empty" class="empty-state hidden">
-          <div class="empty-icon">&#128196;</div>
-          <p class="empty-title">No applications tracked yet</p>
-          <p class="empty-sub">Click "Track New Application" to start tracking your job search.</p>
-        </div>
-        <div id="applications-list" class="applications-table-wrapper"></div>
-      </div>
-    </section>
+    </section><!-- /jobs -->
 
     <!-- ===== ELIGIBILITY SECTION ===== -->
     <section id="section-eligibility" class="section">
-      <div class="page-header">
-        <h2 class="page-title">Check Your Eligibility</h2>
-        <p class="page-sub">Enter your details below to instantly see if you qualify for a specific job allocation.</p>
-      </div>
-
-      <div class="eligibility-layout">
-        <div class="eligibility-form-card">
-          <form id="eligibility-form" novalidate>
-            <div class="form-group">
-              <label for="elig-student-id">Student ID <span class="required">*</span></label>
-              <input type="text" id="elig-student-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" />
-              <span class="field-helper">Your unique student identifier (UUID format)</span>
-              <span class="field-error" id="elig-student-id-error"></span>
-            </div>
-            <div class="form-group">
-              <label for="elig-job-id">Job ID <span class="required">*</span></label>
-              <input type="text" id="elig-job-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" />
-              <span class="field-error" id="elig-job-id-error"></span>
-            </div>
-            <div class="form-group">
-              <label for="elig-company-id">Company ID <span class="required">*</span></label>
-              <input type="text" id="elig-company-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" />
-              <span class="field-error" id="elig-company-id-error"></span>
-            </div>
-            <div class="form-group">
-              <label for="elig-fit-score">Fit Score <span class="required">*</span></label>
-              <div class="slider-row">
-                <input type="range" id="elig-fit-score" class="fit-slider" min="0" max="100" value="75" />
-                <span id="elig-fit-score-display" class="slider-value">75</span>
-              </div>
-              <span class="field-error" id="elig-fit-score-error"></span>
-            </div>
-            <div class="form-group">
-              <label for="elig-job-status">Job Status <span class="required">*</span></label>
-              <select id="elig-job-status">
-                <option value="OPEN">OPEN</option>
-                <option value="REOPENED">REOPENED</option>
-              </select>
-            </div>
-            <button type="submit" class="btn btn-primary btn-full" id="elig-submit-btn">
-              <span class="btn-text">Check Allocation</span>
-              <span class="btn-spinner hidden"></span>
-            </button>
-          </form>
+      <div class="section-inner section-inner--narrow">
+        <div class="page-header">
+          <h1 class="page-title">Eligibility Checker</h1>
+          <p class="page-sub">Find out if you qualify for a job before you apply</p>
         </div>
-
-        <div class="eligibility-result-panel" id="elig-result-panel">
-          <div class="result-placeholder">
-            <div class="result-placeholder-icon">&#128270;</div>
-            <p>Fill in the form and click <strong>Check Allocation</strong> to see the eligibility result here.</p>
+        <div class="form-card">
+          <div class="form-group">
+            <label class="form-label" for="elig-student-id">Student ID (UUID)</label>
+            <input type="text" id="elig-student-id" class="form-input" placeholder="e.g. 123e4567-e89b-12d3-a456-426614174000" autocomplete="off" />
+            <span class="field-error" id="elig-student-id-err"></span>
           </div>
+          <div class="form-group">
+            <label class="form-label" for="elig-job-select">Select a Job</label>
+            <select id="elig-job-select" class="form-input">
+              <option value="">— select a job —</option>
+            </select>
+            <span class="form-hint">Or enter Job ID and Company ID manually below</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="elig-job-id">Job ID (UUID)</label>
+            <input type="text" id="elig-job-id" class="form-input" placeholder="Job UUID" autocomplete="off" />
+            <span class="field-error" id="elig-job-id-err"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="elig-company-id">Company ID (UUID)</label>
+            <input type="text" id="elig-company-id" class="form-input" placeholder="Company UUID" autocomplete="off" />
+            <span class="field-error" id="elig-company-id-err"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="elig-fit-score">Your Fit Score (0–100)</label>
+            <input type="number" id="elig-fit-score" class="form-input" min="0" max="100" placeholder="e.g. 85" />
+            <span class="field-error" id="elig-fit-score-err"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="elig-status">Job Status</label>
+            <select id="elig-status" class="form-input">
+              <option value="OPEN">Open</option>
+              <option value="REOPENED">Reopened</option>
+              <option value="CLOSED">Closed</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-full" id="elig-check-btn">Check Eligibility</button>
         </div>
+
+        <div id="elig-result" class="elig-result" style="display:none"></div>
       </div>
-      <div id="elig-error" class="error-banner hidden"></div>
-    </section>
+    </section><!-- /eligibility -->
 
     <!-- ===== RECOMMENDATIONS SECTION ===== -->
     <section id="section-recommendations" class="section">
-      <div class="page-header">
-        <h2 class="page-title">Job Recommendations</h2>
-        <p class="page-sub">Enter your Student ID and fit score to see personalized job recommendations.</p>
-      </div>
-
-      <div class="rec-form-wrapper">
-        <form id="rec-form" novalidate class="rec-form-card">
-          <div class="rec-form-fields">
-            <div class="form-group">
-              <label for="rec-student-id">Student ID <span class="required">*</span></label>
-              <input type="text" id="rec-student-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" />
-              <span class="field-error" id="rec-student-id-error"></span>
-            </div>
-            <div class="form-group">
-              <label for="rec-fit-score">Fit Score <span class="required">*</span></label>
-              <div class="slider-row">
-                <input type="range" id="rec-fit-score" class="fit-slider" min="0" max="100" value="75" />
-                <span id="rec-fit-score-display" class="slider-value">75</span>
-              </div>
-              <span class="field-error" id="rec-fit-score-error"></span>
-            </div>
-            <div class="form-group form-group-btn">
-              <button type="submit" class="btn btn-primary btn-full" id="rec-submit-btn">
-                <span class="btn-text">Get My Recommendations</span>
-                <span class="btn-spinner hidden"></span>
-              </button>
-            </div>
+      <div class="section-inner">
+        <div class="page-header">
+          <h1 class="page-title">Job Recommendations</h1>
+          <p class="page-sub">Personalized job matches based on your profile</p>
+        </div>
+        <div class="form-card form-card--inline">
+          <div class="form-group">
+            <label class="form-label" for="rec-student-id">Student ID (UUID)</label>
+            <input type="text" id="rec-student-id" class="form-input" placeholder="Your student UUID" autocomplete="off" />
+            <span class="field-error" id="rec-student-id-err"></span>
           </div>
-        </form>
+          <div class="form-group">
+            <label class="form-label" for="rec-fit-score">Fit Score (0–100)</label>
+            <input type="number" id="rec-fit-score" class="form-input" min="0" max="100" placeholder="e.g. 85" />
+            <span class="field-error" id="rec-fit-score-err"></span>
+          </div>
+          <button class="btn btn-primary" id="rec-btn">Get My Recommendations</button>
+        </div>
+
+        <div id="rec-grid" class="jobs-grid" style="display:none"></div>
+        <div id="rec-empty" class="empty-state" style="display:none">
+          <div class="empty-icon">🎯</div>
+          <h3>No recommendations yet</h3>
+          <p>Enter your student ID and fit score above to get personalized job matches.</p>
+        </div>
+        <div id="rec-error" class="error-state" style="display:none"></div>
       </div>
-
-      <div id="rec-loading" class="skeleton-grid hidden">
-        <div class="skeleton-card"></div>
-        <div class="skeleton-card"></div>
-        <div class="skeleton-card"></div>
-      </div>
-
-      <div id="rec-results" class="jobs-grid"></div>
-
-      <div id="rec-empty" class="empty-state hidden">
-        <div class="empty-icon">&#128587;</div>
-        <p class="empty-title">No recommendations found</p>
-        <p class="empty-sub">Enter your Student ID above to see personalized job recommendations.</p>
-      </div>
-
-      <div id="rec-error" class="error-banner hidden"></div>
-    </section>
+    </section><!-- /recommendations -->
 
     <!-- ===== PROFILE SECTION ===== -->
     <section id="section-profile" class="section">
-      <div class="page-header">
-        <h2 class="page-title">Candidate Profile</h2>
-        <p class="page-sub">Complete your profile so CareerBridge can find the best matches for you.</p>
-      </div>
+      <div class="section-inner section-inner--narrow">
+        <div class="page-header">
+          <h1 class="page-title">My Profile</h1>
+          <p class="page-sub">Keep your profile up to date to get better job matches</p>
+        </div>
 
-      <div class="profile-form-wrapper">
-        <form id="profile-form" novalidate>
+        <!-- Not logged in state -->
+        <div id="profile-gate" class="gate-card" style="display:none">
+          <div class="gate-icon">🔒</div>
+          <h3>Please create an account first</h3>
+          <p>Sign up to build your profile, track applications, and get personalized job matches.</p>
+          <button class="btn btn-primary" id="btn-profile-gate-signup">Sign Up Free</button>
+        </div>
 
-          <!-- Section 1: Personal Info -->
+        <!-- Profile form (shown when logged in) -->
+        <form id="profile-form" style="display:none" novalidate>
+          <!-- Personal Info -->
           <div class="form-section">
-            <div class="form-section-header">
-              <span class="form-section-icon">&#128100;</span>
-              <div>
-                <h3 class="form-section-title">Personal Information</h3>
-                <p class="form-section-sub">Your basic contact details</p>
+            <h2 class="form-section-title">Personal Information</h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="p-full-name">Full Name *</label>
+                <input type="text" id="p-full-name" name="full_name" class="form-input" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="p-email">Email *</label>
+                <input type="email" id="p-email" name="email" class="form-input" required />
               </div>
             </div>
-            <div class="form-section-body">
-              <div class="profile-picture-area">
-                <div class="profile-picture-preview" id="profile-picture-preview">
-                  <span class="profile-picture-placeholder" id="profile-picture-placeholder">&#128100;</span>
-                  <img id="profile-picture-img" class="profile-picture-img hidden" alt="Profile preview" />
-                </div>
-                <div class="profile-picture-info">
-                  <button type="button" class="btn btn-outline" id="profile-picture-btn">Upload Photo</button>
-                  <input type="file" id="profile-picture-input" class="hidden" accept="image/*" />
-                  <p class="field-helper">JPG, PNG or GIF. Max 2MB.</p>
-                </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="p-phone">Phone</label>
+                <input type="tel" id="p-phone" name="phone" class="form-input" placeholder="+1 (555) 000-0000" />
               </div>
-              <div class="form-grid-2">
-                <div class="form-group">
-                  <label for="pf-full-name">Full Name <span class="required">*</span></label>
-                  <input type="text" id="pf-full-name" placeholder="Jane Smith" autocomplete="name" />
-                  <span class="field-error" id="pf-full-name-error"></span>
-                </div>
-                <div class="form-group">
-                  <label for="pf-email">Email Address <span class="required">*</span></label>
-                  <input type="email" id="pf-email" placeholder="jane@example.com" autocomplete="email" />
-                  <span class="field-error" id="pf-email-error"></span>
-                </div>
-                <div class="form-group">
-                  <label for="pf-phone">Phone Number</label>
-                  <input type="tel" id="pf-phone" placeholder="+1 (555) 000-0000" autocomplete="tel" />
-                </div>
-                <div class="form-group">
-                  <label for="pf-city">City</label>
-                  <input type="text" id="pf-city" placeholder="Austin" autocomplete="address-level2" />
-                </div>
-                <div class="form-group">
-                  <label for="pf-state">State</label>
-                  <input type="text" id="pf-state" placeholder="TX" autocomplete="address-level1" />
-                </div>
+              <div class="form-group">
+                <label class="form-label" for="p-city">City</label>
+                <input type="text" id="p-city" name="city" class="form-input" placeholder="Austin" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="p-state">State</label>
+                <input type="text" id="p-state" name="state" class="form-input" placeholder="TX" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="p-work-auth">Work Authorization</label>
+                <select id="p-work-auth" name="work_authorization" class="form-input">
+                  <option value="">Select…</option>
+                  <option>US Citizen</option>
+                  <option>Green Card</option>
+                  <option>H-1B</option>
+                  <option>OPT/CPT</option>
+                  <option>Other</option>
+                </select>
               </div>
             </div>
           </div>
 
-          <!-- Section 2: Job Preferences -->
+          <!-- Job Preferences -->
           <div class="form-section">
-            <div class="form-section-header">
-              <span class="form-section-icon">&#127919;</span>
-              <div>
-                <h3 class="form-section-title">Job Preferences</h3>
-                <p class="form-section-sub">Tell us what kind of work you're looking for</p>
-              </div>
-            </div>
-            <div class="form-section-body">
+            <h2 class="form-section-title">Job Preferences</h2>
+            <div class="form-row">
               <div class="form-group">
-                <label>Preferred Job Titles</label>
-                <div class="tags-input-wrapper" id="preferred-titles-wrapper">
-                  <div class="tags-container" id="preferred-titles-tags"></div>
-                  <input type="text" class="tags-input-field" id="preferred-titles-input" placeholder="Type a title and press Enter..." />
-                </div>
-                <span class="field-helper">e.g. Frontend Engineer, Data Analyst</span>
-              </div>
-              <div class="form-group">
-                <label>Job Types</label>
-                <div class="checkbox-group">
-                  <label class="checkbox-label"><input type="checkbox" name="job_types" value="Full-time" /> Full-time</label>
-                  <label class="checkbox-label"><input type="checkbox" name="job_types" value="Part-time" /> Part-time</label>
-                  <label class="checkbox-label"><input type="checkbox" name="job_types" value="Contract" /> Contract</label>
-                  <label class="checkbox-label"><input type="checkbox" name="job_types" value="Internship" /> Internship</label>
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Work Setting</label>
-                <div class="radio-group">
-                  <label class="radio-label"><input type="radio" name="work_setting" value="REMOTE" /> Remote</label>
-                  <label class="radio-label"><input type="radio" name="work_setting" value="HYBRID" /> Hybrid</label>
-                  <label class="radio-label"><input type="radio" name="work_setting" value="ONSITE" /> Onsite</label>
-                  <label class="radio-label"><input type="radio" name="work_setting" value="ANY" checked /> No Preference</label>
-                </div>
-              </div>
-              <div class="form-grid-2">
-                <div class="form-group">
-                  <label for="pf-salary-min">Salary Minimum</label>
-                  <div class="input-prefix-wrapper">
-                    <span class="input-prefix">$</span>
-                    <input type="number" id="pf-salary-min" placeholder="50000" min="0" class="input-with-prefix" />
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label for="pf-salary-max">Salary Maximum</label>
-                  <div class="input-prefix-wrapper">
-                    <span class="input-prefix">$</span>
-                    <input type="number" id="pf-salary-max" placeholder="120000" min="0" class="input-with-prefix" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Section 3: Experience & Skills -->
-          <div class="form-section">
-            <div class="form-section-header">
-              <span class="form-section-icon">&#128188;</span>
-              <div>
-                <h3 class="form-section-title">Experience &amp; Skills</h3>
-                <p class="form-section-sub">Your background and technical abilities</p>
-              </div>
-            </div>
-            <div class="form-section-body">
-              <div class="form-group">
-                <label for="pf-years-exp">Years of Experience</label>
-                <select id="pf-years-exp">
-                  <option value="">Select...</option>
-                  <option value="0">Less than 1 year</option>
-                  <option value="1">1 year</option>
-                  <option value="2">2 years</option>
-                  <option value="3">3 years</option>
-                  <option value="4">4 years</option>
-                  <option value="5">5 years</option>
-                  <option value="6">6 years</option>
-                  <option value="7">7 years</option>
-                  <option value="8">8 years</option>
-                  <option value="9">9 years</option>
-                  <option value="10">10 years</option>
-                  <option value="15">11–15 years</option>
-                  <option value="20">16–20 years</option>
-                  <option value="21">20+ years</option>
+                <label class="form-label" for="p-job-types">Job Types</label>
+                <select id="p-job-types" name="job_types" class="form-input">
+                  <option value="">Select…</option>
+                  <option>Full-time</option>
+                  <option>Part-time</option>
+                  <option>Contract</option>
+                  <option>Internship</option>
+                  <option>Freelance</option>
                 </select>
               </div>
               <div class="form-group">
-                <label>Industries of Interest</label>
-                <div class="tags-input-wrapper" id="industries-wrapper">
-                  <div class="tags-container" id="industries-tags"></div>
-                  <input type="text" class="tags-input-field" id="industries-input" placeholder="Type an industry and press Enter..." />
-                </div>
-                <span class="field-helper">e.g. FinTech, Healthcare, SaaS</span>
+                <label class="form-label" for="p-work-setting">Work Setting</label>
+                <select id="p-work-setting" name="work_setting" class="form-input">
+                  <option value="">Select…</option>
+                  <option>Remote</option>
+                  <option>Hybrid</option>
+                  <option>Onsite</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="p-salary-min">Salary Min ($)</label>
+                <input type="number" id="p-salary-min" name="salary_min" class="form-input" placeholder="60000" min="0" />
               </div>
               <div class="form-group">
-                <label>Skills</label>
-                <div class="tags-input-wrapper" id="skills-wrapper">
-                  <div class="tags-container" id="skills-tags"></div>
-                  <input type="text" class="tags-input-field" id="skills-input" placeholder="Type a skill and press Enter..." />
-                </div>
-                <span class="field-helper">e.g. Python, React, SQL</span>
+                <label class="form-label" for="p-salary-max">Salary Max ($)</label>
+                <input type="number" id="p-salary-max" name="salary_max" class="form-input" placeholder="120000" min="0" />
               </div>
-              <div class="form-group">
-                <label>Certifications</label>
-                <div class="tags-input-wrapper" id="certifications-wrapper">
-                  <div class="tags-container" id="certifications-tags"></div>
-                  <input type="text" class="tags-input-field" id="certifications-input" placeholder="Type a certification and press Enter..." />
-                </div>
-                <span class="field-helper">e.g. AWS Certified, PMP</span>
-              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="p-timeframe">Job Search Timeframe</label>
+              <select id="p-timeframe" name="timeframe" class="form-input">
+                <option value="">Select…</option>
+                <option>Immediately</option>
+                <option>Within 1 month</option>
+                <option>1–3 months</option>
+                <option>3–6 months</option>
+                <option>Just exploring</option>
+              </select>
             </div>
           </div>
 
-          <!-- Section 4: Education & Authorization -->
+          <!-- Experience & Skills -->
           <div class="form-section">
-            <div class="form-section-header">
-              <span class="form-section-icon">&#127891;</span>
-              <div>
-                <h3 class="form-section-title">Education &amp; Authorization</h3>
-                <p class="form-section-sub">Your academic background and work eligibility</p>
-              </div>
+            <h2 class="form-section-title">Experience &amp; Skills</h2>
+            <div class="form-group">
+              <label class="form-label" for="p-years-exp">Years of Experience</label>
+              <input type="number" id="p-years-exp" name="years_experience" class="form-input" placeholder="3" min="0" max="50" />
             </div>
-            <div class="form-section-body">
-              <div class="form-group">
-                <label for="pf-education">Education</label>
-                <textarea id="pf-education" rows="3" placeholder="e.g. B.S. Computer Science, University of Texas at Austin, 2024"></textarea>
+            <div class="form-group">
+              <label class="form-label">Skills <span class="form-hint">(type and press Enter)</span></label>
+              <div class="tags-input-wrap" id="skills-wrap">
+                <div class="tags-list" id="skills-tags"></div>
+                <input type="text" id="skills-input" class="tags-input" placeholder="Add a skill…" autocomplete="off" />
               </div>
-              <div class="form-grid-2">
-                <div class="form-group">
-                  <label for="pf-work-auth">Work Authorization Status</label>
-                  <select id="pf-work-auth">
-                    <option value="">Select...</option>
-                    <option value="US Citizen">US Citizen</option>
-                    <option value="Green Card">Green Card</option>
-                    <option value="H1B">H1B Visa</option>
-                    <option value="OPT">OPT</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label for="pf-availability">Availability to Start</label>
-                  <input type="date" id="pf-availability" />
-                </div>
-                <div class="form-group">
-                  <label for="pf-timeframe">Timeframe</label>
-                  <select id="pf-timeframe">
-                    <option value="">Select...</option>
-                    <option value="Immediately">Immediately</option>
-                    <option value="1 month">1 month</option>
-                    <option value="3 months">3 months</option>
-                    <option value="6 months">6 months</option>
-                  </select>
-                </div>
+              <input type="hidden" id="p-skills" name="skills" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Certifications <span class="form-hint">(type and press Enter)</span></label>
+              <div class="tags-input-wrap" id="certs-wrap">
+                <div class="tags-list" id="certs-tags"></div>
+                <input type="text" id="certs-input" class="tags-input" placeholder="Add a certification…" autocomplete="off" />
               </div>
+              <input type="hidden" id="p-certs" name="certifications" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Industries <span class="form-hint">(type and press Enter)</span></label>
+              <div class="tags-input-wrap" id="industries-wrap">
+                <div class="tags-list" id="industries-tags"></div>
+                <input type="text" id="industries-input" class="tags-input" placeholder="Add an industry…" autocomplete="off" />
+              </div>
+              <input type="hidden" id="p-industries" name="industries" />
             </div>
           </div>
 
-          <!-- Section 5: Online Presence -->
+          <!-- Education -->
           <div class="form-section">
-            <div class="form-section-header">
-              <span class="form-section-icon">&#127758;</span>
-              <div>
-                <h3 class="form-section-title">Online Presence</h3>
-                <p class="form-section-sub">Links to your professional profiles</p>
-              </div>
-            </div>
-            <div class="form-section-body">
-              <div class="form-grid-2">
-                <div class="form-group">
-                  <label for="pf-linkedin">LinkedIn URL</label>
-                  <input type="url" id="pf-linkedin" placeholder="https://linkedin.com/in/yourname" />
-                </div>
-                <div class="form-group">
-                  <label for="pf-portfolio">Portfolio URL</label>
-                  <input type="url" id="pf-portfolio" placeholder="https://yourportfolio.com" />
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Preferred Companies</label>
-                <div class="tags-input-wrapper" id="preferred-companies-wrapper">
-                  <div class="tags-container" id="preferred-companies-tags"></div>
-                  <input type="text" class="tags-input-field" id="preferred-companies-input" placeholder="Type a company name and press Enter..." />
-                </div>
-              </div>
+            <h2 class="form-section-title">Education</h2>
+            <div class="form-group">
+              <label class="form-label" for="p-education">Highest Education Level</label>
+              <select id="p-education" name="education" class="form-input">
+                <option value="">Select…</option>
+                <option>High School / GED</option>
+                <option>Associate's Degree</option>
+                <option>Bachelor's Degree</option>
+                <option>Master's Degree</option>
+                <option>PhD / Doctorate</option>
+                <option>Bootcamp / Certificate</option>
+                <option>Self-taught</option>
+              </select>
             </div>
           </div>
 
-          <!-- Section 6: About Me -->
+          <!-- Online Presence -->
           <div class="form-section">
-            <div class="form-section-header">
-              <span class="form-section-icon">&#128221;</span>
-              <div>
-                <h3 class="form-section-title">About Me</h3>
-                <p class="form-section-sub">A brief summary and your resume</p>
-              </div>
-            </div>
-            <div class="form-section-body">
+            <h2 class="form-section-title">Online Presence</h2>
+            <div class="form-row">
               <div class="form-group">
-                <label for="pf-summary">Summary / About Me</label>
-                <textarea id="pf-summary" rows="5" placeholder="Tell employers a bit about yourself, your goals, and what makes you a great candidate..." maxlength="500"></textarea>
-                <div class="char-counter"><span id="pf-summary-count">0</span> / 500</div>
+                <label class="form-label" for="p-linkedin">LinkedIn URL</label>
+                <input type="url" id="p-linkedin" name="linkedin_url" class="form-input" placeholder="https://linkedin.com/in/yourname" />
               </div>
               <div class="form-group">
-                <label>Resume</label>
-                <div class="resume-drop-area" id="resume-drop-area">
-                  <span class="resume-drop-icon" aria-hidden="true">&#128196;</span>
-                  <p class="resume-drop-title">Drag &amp; drop your resume here</p>
-                  <p class="resume-drop-sub">or <button type="button" class="btn-link" id="resume-browse-btn">browse files</button></p>
-                  <p class="resume-drop-types">PDF, DOC, DOCX up to 5MB</p>
-                  <input type="file" id="resume-input" class="hidden" accept=".pdf,.doc,.docx" />
-                </div>
-                <div id="resume-file-display" class="resume-file-display hidden">
-                  <span class="resume-file-icon">&#128196;</span>
-                  <span id="resume-file-name" class="resume-file-name"></span>
-                  <button type="button" class="btn-icon" id="resume-remove-btn" aria-label="Remove file">&#10005;</button>
-                </div>
-              </div>
-
-              <div class="ai-resume-divider">
-                <span>— or —</span>
-              </div>
-
-              <div class="ai-resume-cta">
-                <p class="ai-resume-cta-text">Let AI craft a professional resume from your profile data</p>
-                <button type="button" class="btn ai-generate-btn" onclick="generateAIResume()">
-                  &#10024; Generate AI Resume
-                </button>
+                <label class="form-label" for="p-portfolio">Portfolio URL</label>
+                <input type="url" id="p-portfolio" name="portfolio_url" class="form-input" placeholder="https://yourportfolio.com" />
               </div>
             </div>
           </div>
 
-          <div class="form-submit-row">
-            <button type="submit" class="btn btn-primary btn-lg btn-full" id="profile-submit-btn">
-              <span class="btn-text">Save Profile</span>
-              <span class="btn-spinner hidden"></span>
-            </button>
+          <!-- About Me -->
+          <div class="form-section">
+            <h2 class="form-section-title">About Me</h2>
+            <div class="form-group">
+              <label class="form-label" for="p-summary">Professional Summary</label>
+              <textarea id="p-summary" name="summary" class="form-textarea" rows="5" placeholder="Tell employers what makes you great…"></textarea>
+            </div>
           </div>
 
-          <div id="profile-success" class="success-banner hidden">
-            Your profile has been saved successfully! &#127881;
+          <!-- Resume Upload -->
+          <div class="form-section">
+            <h2 class="form-section-title">Resume</h2>
+            <div class="resume-drop-zone" id="resume-drop-zone">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path d="M24 32V16M24 16l-6 6M24 16l6 6" stroke="#2d8a4e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="8" y="8" width="32" height="32" rx="6" stroke="#2d8a4e" stroke-width="1.5" stroke-dasharray="4 2"/></svg>
+              <p>Drag &amp; drop your resume here, or <label for="resume-file" class="file-link">browse to upload</label></p>
+              <p class="form-hint">PDF, DOCX — up to 5MB</p>
+              <input type="file" id="resume-file" accept=".pdf,.doc,.docx" style="display:none" />
+            </div>
+            <div id="resume-file-name" class="resume-file-name" style="display:none"></div>
           </div>
-          <div id="profile-error" class="error-banner hidden"></div>
 
+          <div id="profile-form-error" class="form-error" style="display:none"></div>
+          <div id="profile-form-success" class="form-success" style="display:none"></div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-lg" id="profile-save-btn">Save Profile</button>
+          </div>
         </form>
       </div>
-    </section>
+    </section><!-- /profile -->
+
+    <!-- ===== DASHBOARD SECTION ===== -->
+    <section id="section-dashboard" class="section">
+      <div class="section-inner">
+
+        <!-- Gate: not logged in -->
+        <div id="dashboard-gate" class="gate-card" style="display:none">
+          <div class="gate-icon">🔒</div>
+          <h3>Sign in to view your dashboard</h3>
+          <p>Track your applications, saved jobs, and progress all in one place.</p>
+          <button class="btn btn-primary" id="btn-dash-gate-login">Log In</button>
+          <button class="btn btn-outline" id="btn-dash-gate-signup" style="margin-left:12px">Sign Up Free</button>
+        </div>
+
+        <!-- Dashboard content (shown when logged in) -->
+        <div id="dashboard-content" style="display:none">
+
+          <!-- Welcome header -->
+          <div class="dash-header">
+            <div>
+              <h1 class="dash-welcome" id="dash-welcome-name">Welcome back!</h1>
+              <div class="dash-student-badge" id="dash-student-badge"></div>
+            </div>
+            <button class="btn btn-outline btn-sm" data-nav="jobs">Browse Jobs</button>
+          </div>
+
+          <!-- Stats row -->
+          <div class="dash-stats">
+            <div class="stat-card">
+              <div class="fit-circle" id="dash-fit-circle">
+                <svg viewBox="0 0 80 80" class="fit-svg">
+                  <circle cx="40" cy="40" r="34" fill="none" stroke="#e2e8f0" stroke-width="6"/>
+                  <circle cx="40" cy="40" r="34" fill="none" stroke="#2d8a4e" stroke-width="6"
+                    stroke-dasharray="213.6" stroke-dashoffset="213.6"
+                    id="fit-progress-ring" stroke-linecap="round"
+                    transform="rotate(-90 40 40)"/>
+                </svg>
+                <span class="fit-circle-val" id="dash-fit-val">—</span>
+              </div>
+              <div class="stat-label">Fit Score</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-num" id="dash-saved-count">0</div>
+              <div class="stat-label">Saved Jobs</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-num" id="dash-apps-count">0</div>
+              <div class="stat-label">Applications</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-num" id="dash-profile-pct">0%</div>
+              <div class="stat-label">Profile Complete</div>
+            </div>
+          </div>
+
+          <!-- Profile completion bar -->
+          <div class="dash-card" id="dash-profile-card">
+            <div class="dash-card-header">
+              <h2>Profile Completion</h2>
+              <a href="#profile" data-section="profile" class="btn btn-outline btn-sm">Complete Profile</a>
+            </div>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar" id="dash-profile-bar" style="width:0%"></div>
+            </div>
+            <p class="progress-hint" id="dash-profile-hint">Complete your profile to unlock better job matches.</p>
+          </div>
+
+          <!-- Next steps -->
+          <div class="dash-card">
+            <div class="dash-card-header"><h2>Next Steps</h2></div>
+            <div class="next-steps-grid" id="dash-next-steps">
+              <div class="next-step-card" data-nav="jobs">
+                <div class="next-step-icon">🔍</div>
+                <div>
+                  <div class="next-step-title">Browse Jobs</div>
+                  <div class="next-step-sub">Explore open positions matched to your profile</div>
+                </div>
+              </div>
+              <div class="next-step-card" data-nav="eligibility">
+                <div class="next-step-icon">✅</div>
+                <div>
+                  <div class="next-step-title">Check Eligibility</div>
+                  <div class="next-step-sub">See if you qualify before applying</div>
+                </div>
+              </div>
+              <div class="next-step-card" data-nav="recommendations">
+                <div class="next-step-icon">🎯</div>
+                <div>
+                  <div class="next-step-title">Get Recommendations</div>
+                  <div class="next-step-sub">AI-powered job matches just for you</div>
+                </div>
+              </div>
+              <div class="next-step-card" data-nav="about">
+                <div class="next-step-icon">📄</div>
+                <div>
+                  <div class="next-step-title">AI Resume Builder</div>
+                  <div class="next-step-sub">Create a professional resume in seconds</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Applications -->
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h2>Recent Applications</h2>
+            </div>
+            <div id="dash-apps-table-wrap">
+              <table class="apps-table" id="dash-apps-table">
+                <thead>
+                  <tr><th>Job Title</th><th>Company</th><th>Status</th><th>Applied</th></tr>
+                </thead>
+                <tbody id="dash-apps-tbody"></tbody>
+              </table>
+              <div id="dash-apps-empty" class="empty-state-sm" style="display:none">No applications yet. <a href="#jobs" data-section="jobs">Browse Jobs →</a></div>
+            </div>
+          </div>
+
+          <!-- Saved Jobs -->
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h2>Saved Jobs</h2>
+              <a href="#jobs" data-section="jobs" class="btn btn-outline btn-sm">Browse More</a>
+            </div>
+            <div class="jobs-grid" id="dash-saved-grid"></div>
+            <div id="dash-saved-empty" class="empty-state-sm" style="display:none">No saved jobs yet. <a href="#jobs" data-section="jobs">Browse Jobs →</a></div>
+          </div>
+
+        </div><!-- /dashboard-content -->
+      </div>
+    </section><!-- /dashboard -->
 
     <!-- ===== ABOUT SECTION ===== -->
     <section id="section-about" class="section">
-      <div class="page-header">
-        <h2 class="page-title">How CareerBridge Works</h2>
-        <p class="page-sub">
-          CareerBridge helps anyone — regardless of background or experience level — find a career that pays well and brings real satisfaction. Our intelligent matching system uses clear, fair rules to connect you with the right opportunities.
-        </p>
-      </div>
-
-      <div class="about-intro">
-        <div class="section-inner">
-          <div class="about-intro-card">
-            <div class="about-intro-icon" aria-hidden="true">&#9881;</div>
-            <div>
-              <h3>The Allocation Engine</h3>
-              <p>
-                Every time you're considered for a job, the system runs through a series of checks in order.
-                If any rule is violated, the allocation is blocked and the reason is clearly explained.
-                This ensures fairness, prevents overloading companies, and keeps the process transparent for everyone.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div class="section-inner">
-        <h2 class="section-title" style="margin-bottom: 24px;">The 5 Rules</h2>
+        <div class="page-header">
+          <h1 class="page-title">How CareerBridge Works</h1>
+          <p class="page-sub">A fair, transparent system built to help people succeed</p>
+        </div>
+
         <div class="rules-grid">
           <div class="rule-card">
-            <div class="rule-header">
-              <span class="rule-icon" aria-hidden="true">&#127919;</span>
-              <div>
-                <h3 class="rule-title">Fit Score Threshold</h3>
-                <code class="rule-code">FIT_THRESHOLD</code>
-              </div>
-            </div>
-            <p class="rule-desc">
-              Only jobs where your fit score is <strong>70 or above</strong> are considered.
-              This ensures quality matches and a high success rate for placements.
-            </p>
-            <div class="rule-example">
-              <span class="example-label">Example:</span> A score of 65 won't qualify — but improving your profile can push you over the threshold.
-            </div>
+            <div class="rule-num">01</div>
+            <h3>Fit Score Requirement</h3>
+            <p>Each job has a minimum fit score threshold. Candidates below the threshold are not allocated, ensuring quality matches for both sides.</p>
           </div>
-
           <div class="rule-card">
-            <div class="rule-header">
-              <span class="rule-icon" aria-hidden="true">&#128203;</span>
-              <div>
-                <h3 class="rule-title">Job Allocation Cap</h3>
-                <code class="rule-code">JOB_CAP</code>
-              </div>
-            </div>
-            <p class="rule-desc">
-              Each job accepts a maximum of <strong>12 placements per week</strong> to ensure fair distribution.
-              Once full, it becomes temporarily unavailable until the next week.
-            </p>
-            <div class="rule-example">
-              <span class="example-label">Example:</span> A popular posting that's full this week will reopen next Monday.
-            </div>
+            <div class="rule-num">02</div>
+            <h3>Weekly Application Cap</h3>
+            <p>Each candidate can apply to a maximum of 5 jobs per week. This prevents spam and keeps the process fair for everyone.</p>
           </div>
-
           <div class="rule-card">
-            <div class="rule-header">
-              <span class="rule-icon" aria-hidden="true">&#127970;</span>
-              <div>
-                <h3 class="rule-title">Company Cap</h3>
-                <code class="rule-code">COMPANY_CAP</code>
-              </div>
-            </div>
-            <p class="rule-desc">
-              Companies receive no more than <strong>30 placements per week</strong> across all their jobs.
-              This maintains balance and prevents any single employer from being overwhelmed.
-            </p>
-            <div class="rule-example">
-              <span class="example-label">Example:</span> If a company hits 30 this week, try their other roles next week.
-            </div>
+            <div class="rule-num">03</div>
+            <h3>Job Capacity Limits</h3>
+            <p>Each job posting accepts a maximum of 12 candidates per week to ensure manageable review queues for employers.</p>
           </div>
-
           <div class="rule-card">
-            <div class="rule-header">
-              <span class="rule-icon" aria-hidden="true">&#128197;</span>
-              <div>
-                <h3 class="rule-title">Weekly Application Limit</h3>
-                <code class="rule-code">STUDENT_WEEKLY_CAP</code>
-              </div>
-            </div>
-            <p class="rule-desc">
-              Students can apply to up to <strong>5 jobs per week</strong> to encourage thoughtful, quality applications
-              rather than mass applying.
-            </p>
-            <div class="rule-example">
-              <span class="example-label">Example:</span> New application slots open every Monday at midnight.
-            </div>
+            <div class="rule-num">04</div>
+            <h3>Company Weekly Limits</h3>
+            <p>Companies can receive a maximum of 30 new candidates per week across all their open roles.</p>
           </div>
-
           <div class="rule-card">
-            <div class="rule-header">
-              <span class="rule-icon" aria-hidden="true">&#9203;</span>
-              <div>
-                <h3 class="rule-title">Cooldown Period</h3>
-                <code class="rule-code">COOLDOWN</code>
-              </div>
-            </div>
-            <p class="rule-desc">
-              After applying to a job, a <strong>14-day cooldown</strong> applies before you can reapply to the same position.
-              This gives other students a fair chance.
-            </p>
-            <div class="rule-example">
-              <span class="example-label">Example:</span> Applied to "Frontend Engineer at Acme" today? You can reapply in 14 days.
-            </div>
+            <div class="rule-num">05</div>
+            <h3>Cooldown Period</h3>
+            <p>After applying to a job, a cooldown period applies before you can reapply to the same role. This ensures thoughtful applications.</p>
           </div>
         </div>
-      </div>
 
-      <!-- FAQ -->
-      <div class="faq-section">
-        <div class="section-inner">
+        <div class="faq-section">
           <h2 class="section-title">Frequently Asked Questions</h2>
           <div class="faq-list" id="faq-list">
-
             <div class="faq-item">
-              <button class="faq-question" aria-expanded="false">
-                What is a fit score?
-                <span class="faq-chevron" aria-hidden="true">&#8964;</span>
-              </button>
-              <div class="faq-answer">
-                <p>
-                  A fit score is a number from 0 to 100 that represents how well your profile matches a specific job.
-                  It's calculated based on your skills, experience, preferences, and the job's requirements.
-                  A score of 70 or higher means you're a strong candidate for that role.
-                </p>
+              <button class="faq-q">What is a Fit Score? <svg width="16" height="16" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+              <div class="faq-a">A Fit Score is a 0–100 number that represents how well your profile matches a job's requirements. The higher your score, the better your chances. Improve it by completing your profile with skills, experience, and certifications.</div>
+            </div>
+            <div class="faq-item">
+              <button class="faq-q">How do I improve my Fit Score? <svg width="16" height="16" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+              <div class="faq-a">Complete your profile fully, add relevant skills, upload your resume, and include certifications. Each completed section boosts your score. Aim for at least 75 to qualify for most positions.</div>
+            </div>
+            <div class="faq-item">
+              <button class="faq-q">Can I apply to multiple jobs at once? <svg width="16" height="16" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+              <div class="faq-a">Yes! You can apply to up to 5 jobs per week. Your weekly limit resets every Monday. This cap helps ensure every application is thoughtful and targeted.</div>
+            </div>
+            <div class="faq-item">
+              <button class="faq-q">What does job status mean? <svg width="16" height="16" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+              <div class="faq-a"><strong>OPEN</strong> — accepting new applications. <strong>REOPENED</strong> — was closed and is now accepting applications again. <strong>CLOSED</strong> — no longer accepting applications.</div>
+            </div>
+            <div class="faq-item">
+              <button class="faq-q">Is CareerBridge free? <svg width="16" height="16" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+              <div class="faq-a">Yes, completely free for job seekers. We believe everyone deserves access to great career opportunities, regardless of their financial situation.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="contact-section">
+          <h2 class="section-title">Get In Touch</h2>
+          <div class="contact-form-card">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="contact-name">Your Name</label>
+                <input type="text" id="contact-name" class="form-input" placeholder="Jane Smith" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="contact-email">Your Email</label>
+                <input type="email" id="contact-email" class="form-input" placeholder="jane@example.com" />
               </div>
             </div>
-
-            <div class="faq-item">
-              <button class="faq-question" aria-expanded="false">
-                How do I get recommended for jobs?
-                <span class="faq-chevron" aria-hidden="true">&#8964;</span>
-              </button>
-              <div class="faq-answer">
-                <p>
-                  Complete your candidate profile on the Profile page, then visit the Recommendations page and enter your
-                  Student ID and fit score. The system will find all jobs where you're eligible based on the allocation rules
-                  and rank them by compatibility.
-                </p>
-              </div>
+            <div class="form-group">
+              <label class="form-label" for="contact-message">Message</label>
+              <textarea id="contact-message" class="form-textarea" rows="4" placeholder="How can we help?"></textarea>
             </div>
-
-            <div class="faq-item">
-              <button class="faq-question" aria-expanded="false">
-                Can I reapply after being rejected?
-                <span class="faq-chevron" aria-hidden="true">&#8964;</span>
-              </button>
-              <div class="faq-answer">
-                <p>
-                  Yes — after the 14-day cooldown period expires. This window gives you time to improve your profile,
-                  gain new skills, or wait for fresh availability at the company. After the cooldown, you're free to
-                  reapply as long as all other rules still pass.
-                </p>
-              </div>
-            </div>
-
-            <div class="faq-item">
-              <button class="faq-question" aria-expanded="false">
-                How is my data used?
-                <span class="faq-chevron" aria-hidden="true">&#8964;</span>
-              </button>
-              <div class="faq-answer">
-                <p>
-                  Your profile data is used exclusively to match you with relevant job opportunities and to check
-                  your eligibility. We do not sell your data to third parties. Your information is stored securely
-                  and you can request deletion at any time by contacting our support team.
-                </p>
-              </div>
-            </div>
-
+            <button class="btn btn-primary" id="contact-send-btn">Send Message</button>
+            <div id="contact-result" style="display:none; margin-top:12px;"></div>
           </div>
         </div>
       </div>
+    </section><!-- /about -->
 
-    </section>
-
-  </main>
-
-  <!-- ===== AI RESUME MODAL ===== -->
-  <div id="resume-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resume-modal-title">
-    <div class="modal-box modal-box-wide">
-      <div class="modal-header">
-        <h2 id="resume-modal-title" class="modal-title">&#10024; AI Resume Builder</h2>
-        <button class="modal-close" onclick="closeResumeModal()" aria-label="Close">&#10005;</button>
-      </div>
-      <div class="modal-body">
-        <p class="modal-intro">We'll create a professional, ATS-friendly resume based on your profile information.</p>
-        <div id="resume-modal-idle">
-          <button class="btn ai-generate-btn btn-full" onclick="runAIResumeGeneration()">
-            <span class="btn-text">&#10024; Generate My Resume</span>
-            <span class="btn-spinner hidden"></span>
-          </button>
+    <!-- ===== ONBOARDING OVERLAY ===== -->
+    <div id="onboarding-overlay" class="onboarding-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
+      <div class="onboarding-card">
+        <div class="onboarding-confetti" aria-hidden="true">🎉</div>
+        <h1 class="onboarding-title" id="onboarding-title">Welcome to CareerBridge, <span id="onboarding-name">Friend</span>!</h1>
+        <p class="onboarding-sub">Your account is ready. Your student number has been sent to <strong id="onboarding-email">your email</strong>.</p>
+        <div class="onboarding-student-num" id="onboarding-student-num">CB-000000</div>
+        <p class="onboarding-sub" style="font-size:0.85rem; color:var(--text-light);">Save this number — you'll use it to track your applications</p>
+        <h3 style="margin: 24px 0 12px; font-size: 1rem; color: var(--text-dark);">What happens next:</h3>
+        <ul class="onboarding-checklist">
+          <li class="onboarding-check onboarding-check--done">✅ Account Created</li>
+          <li class="onboarding-check">⬜ Complete Your Profile</li>
+          <li class="onboarding-check">⬜ Upload Your Resume</li>
+          <li class="onboarding-check">⬜ Browse Jobs</li>
+          <li class="onboarding-check">⬜ Check Eligibility</li>
+          <li class="onboarding-check">⬜ Apply to Jobs</li>
+        </ul>
+        <div class="onboarding-actions">
+          <button class="btn btn-primary btn-lg" id="btn-onboarding-profile">Complete My Profile</button>
+          <button class="btn btn-ghost" id="btn-onboarding-jobs">Browse Jobs First</button>
         </div>
-        <div id="resume-modal-loading" class="ai-loading-state hidden">
-          <div class="loading-spinner-lg"></div>
-          <p>Our AI is crafting your resume&hellip;</p>
-        </div>
-        <div id="resume-modal-result" class="hidden">
-          <div id="resume-preview-box" class="resume-output-wrapper"></div>
-          <div class="modal-actions">
-            <button class="btn btn-outline" onclick="printResume()">&#128424; Download / Print Resume</button>
-            <button class="btn btn-primary" onclick="runAIResumeGeneration()">&#8635; Regenerate</button>
-          </div>
-        </div>
-        <div id="resume-modal-error" class="error-banner hidden"></div>
       </div>
     </div>
-  </div>
 
-  <!-- ===== INTERVIEW PREP MODAL ===== -->
-  <div id="interview-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="interview-modal-title">
-    <div class="modal-box modal-box-wide">
-      <div class="modal-header">
-        <h2 id="interview-modal-title" class="modal-title">&#127919; Interview Preparation</h2>
-        <button class="modal-close" onclick="closeInterviewModal()" aria-label="Close">&#10005;</button>
-      </div>
-      <div class="modal-body">
-        <p id="interview-modal-subtitle" class="modal-intro"></p>
-        <div id="interview-modal-idle">
-          <button class="btn ai-generate-btn btn-full" onclick="runInterviewPrepGeneration()">
-            <span class="btn-text">&#10024; Generate Interview Tips</span>
-            <span class="btn-spinner hidden"></span>
-          </button>
-        </div>
-        <div id="interview-modal-loading" class="ai-loading-state hidden">
-          <div class="loading-spinner-lg"></div>
-          <p>Preparing your personalised interview guide&hellip;</p>
-        </div>
-        <div id="interview-modal-result" class="hidden">
-          <div id="interview-prep-box" class="interview-prep-output-wrapper"></div>
-          <div class="modal-actions">
-            <button class="btn btn-primary" onclick="runInterviewPrepGeneration()">&#8635; Regenerate</button>
-          </div>
-        </div>
-        <div id="interview-modal-error" class="error-banner hidden"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== ADD APPLICATION MODAL ===== -->
-  <div id="add-application-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="add-app-modal-title">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h2 id="add-app-modal-title" class="modal-title">Track New Application</h2>
-        <button class="modal-close" onclick="closeAddApplicationModal()" aria-label="Close">&#10005;</button>
-      </div>
-      <div class="modal-body">
-        <form id="add-application-form" novalidate>
-          <div class="form-group">
-            <label for="app-job-title">Job Title <span class="required">*</span></label>
-            <input type="text" id="app-job-title" placeholder="e.g. Software Engineer" />
-            <span class="field-error" id="app-job-title-error"></span>
-          </div>
-          <div class="form-group">
-            <label for="app-company">Company <span class="required">*</span></label>
-            <input type="text" id="app-company" placeholder="e.g. Acme Corp" />
-            <span class="field-error" id="app-company-error"></span>
-          </div>
-          <div class="form-group">
-            <label for="app-status">Status</label>
-            <select id="app-status">
-              <option value="APPLIED">Applied</option>
-              <option value="REVIEWING">Reviewing</option>
-              <option value="INTERVIEW">Interview</option>
-              <option value="OFFER">Offer</option>
-              <option value="REJECTED">Rejected</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="app-notes">Notes</label>
-            <textarea id="app-notes" rows="3" placeholder="Any notes about this application..."></textarea>
-          </div>
-          <div class="modal-actions">
-            <button type="button" class="btn btn-outline" onclick="closeAddApplicationModal()">Cancel</button>
-            <button type="submit" class="btn btn-primary">Save Application</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
+  </main><!-- /main-content -->
 
   <!-- ===== FOOTER ===== -->
   <footer class="footer">
-    <div class="footer-container">
-      <div class="footer-col">
-        <div class="footer-brand">
-          <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <circle cx="16" cy="16" r="16" fill="#2d8a4e"/>
-            <path d="M10 16.5L14.5 21L22 12" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <strong>CareerBridge</strong>
+    <div class="footer-inner">
+      <div class="footer-col footer-brand-col">
+        <div class="footer-logo">
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="16" fill="#2d8a4e"/><path d="M10 16.5L14.5 21L22 12" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>CareerBridge</span>
         </div>
-        <p class="footer-tagline">Your Bridge to the Career You Deserve. Fair, transparent, and built for everyone.</p>
+        <p class="footer-tagline">Your bridge to the career you deserve. Connecting talent with opportunity, fairly and transparently.</p>
+        <p class="footer-contact-email">careerthatmatters.bridge@gmail.com</p>
       </div>
       <div class="footer-col">
         <h4 class="footer-heading">Quick Links</h4>
         <ul class="footer-links">
-          <li><a href="#home"            data-section="home">Home</a></li>
-          <li><a href="#jobs"            data-section="jobs">Browse Jobs</a></li>
-          <li><a href="#eligibility"     data-section="eligibility">Check Eligibility</a></li>
+          <li><a href="#home" data-section="home">Home</a></li>
+          <li><a href="#jobs" data-section="jobs">Browse Jobs</a></li>
+          <li><a href="#eligibility" data-section="eligibility">Check Eligibility</a></li>
           <li><a href="#recommendations" data-section="recommendations">Recommendations</a></li>
-          <li><a href="#profile"         data-section="profile">My Profile</a></li>
-          <li><a href="#about"           data-section="about">About</a></li>
+          <li><a href="#about" data-section="about">How It Works</a></li>
         </ul>
       </div>
       <div class="footer-col">
         <h4 class="footer-heading">Contact</h4>
-        <ul class="footer-contact">
-          <li>&#128231; support@careerbridge.com</li>
-          <li>&#128205; Austin, TX</li>
-          <li>&#9200; Mon–Fri, 9am–5pm CST</li>
+        <ul class="footer-links">
+          <li>Email: careerthatmatters.bridge@gmail.com</li>
+          <li>Support: Reply to your welcome email</li>
+          <li>Hours: Mon–Fri, 9am–6pm CT</li>
         </ul>
       </div>
     </div>
     <div class="footer-bottom">
-      <div class="footer-container">
-        <p>&copy; 2026 CareerBridge. Built for fair, transparent placement.</p>
-      </div>
+      <p>&copy; 2026 CareerBridge. All rights reserved. Built with care for every career.</p>
     </div>
   </footer>
+
+  <!-- ===== LOGIN MODAL ===== -->
+  <div id="login-modal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="login-modal-title">
+    <div class="modal-card">
+      <button class="modal-close" id="login-modal-close" aria-label="Close">&times;</button>
+      <div class="modal-header">
+        <div class="modal-logo">
+          <svg width="36" height="36" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="16" fill="#2d8a4e"/><path d="M10 16.5L14.5 21L22 12" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h2 class="modal-title" id="login-modal-title">Welcome Back</h2>
+        <p class="modal-sub">Log in to your CareerBridge account</p>
+      </div>
+      <form id="login-form" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="login-email">Email Address</label>
+          <input type="email" id="login-email" class="form-input" placeholder="you@example.com" autocomplete="email" required />
+          <span class="field-error" id="login-email-err"></span>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="login-password">Password</label>
+          <div class="password-wrap">
+            <input type="password" id="login-password" class="form-input" placeholder="Your password" autocomplete="current-password" required />
+            <button type="button" class="pw-toggle" id="login-pw-toggle" aria-label="Show password">👁</button>
+          </div>
+          <span class="field-error" id="login-password-err"></span>
+        </div>
+        <div class="form-error" id="login-error" style="display:none"></div>
+        <button type="submit" class="btn btn-primary btn-full" id="login-submit-btn">
+          <span id="login-btn-text">Log In</span>
+          <span id="login-spinner" class="spinner" style="display:none"></span>
+        </button>
+      </form>
+      <p class="modal-footer-text">
+        <button type="button" class="link-btn" id="login-forgot-btn">Forgot Password?</button>
+      </p>
+      <div id="login-forgot-msg" class="form-hint" style="display:none; text-align:center; margin-top:8px;">Contact support at careerthatmatters.bridge@gmail.com</div>
+      <p class="modal-footer-text">Don't have an account? <button type="button" class="link-btn" id="login-to-signup">Sign Up Free</button></p>
+    </div>
+  </div>
+
+  <!-- ===== SIGNUP MODAL ===== -->
+  <div id="signup-modal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="signup-modal-title">
+    <div class="modal-card">
+      <button class="modal-close" id="signup-modal-close" aria-label="Close">&times;</button>
+      <div class="modal-header">
+        <div class="modal-logo">
+          <svg width="36" height="36" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="16" fill="#2d8a4e"/><path d="M10 16.5L14.5 21L22 12" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h2 class="modal-title" id="signup-modal-title">Create Your Account</h2>
+        <p class="modal-sub">It's free and takes less than a minute</p>
+      </div>
+      <form id="signup-form" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="signup-name">Full Name</label>
+          <input type="text" id="signup-name" class="form-input" placeholder="Jane Smith" autocomplete="name" required />
+          <span class="field-error" id="signup-name-err"></span>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="signup-email">Email Address</label>
+          <input type="email" id="signup-email" class="form-input" placeholder="you@example.com" autocomplete="email" required />
+          <span class="field-error" id="signup-email-err"></span>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="signup-password">Password</label>
+          <div class="password-wrap">
+            <input type="password" id="signup-password" class="form-input" placeholder="Min 8 characters" autocomplete="new-password" required />
+            <button type="button" class="pw-toggle" id="signup-pw-toggle" aria-label="Show password">👁</button>
+          </div>
+          <span class="field-error" id="signup-password-err"></span>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="signup-confirm">Confirm Password</label>
+          <input type="password" id="signup-confirm" class="form-input" placeholder="Repeat your password" autocomplete="new-password" required />
+          <span class="field-error" id="signup-confirm-err"></span>
+        </div>
+        <div class="form-group form-group--checkbox">
+          <label class="checkbox-label">
+            <input type="checkbox" id="signup-terms" required />
+            <span>I agree to the <a href="#about" class="text-link" id="signup-terms-link">Terms of Service</a></span>
+          </label>
+          <span class="field-error" id="signup-terms-err"></span>
+        </div>
+        <div class="form-error" id="signup-error" style="display:none"></div>
+        <button type="submit" class="btn btn-primary btn-full" id="signup-submit-btn">
+          <span id="signup-btn-text">Create My Account</span>
+          <span id="signup-spinner" class="spinner" style="display:none"></span>
+        </button>
+      </form>
+      <p class="modal-footer-text">Already have an account? <button type="button" class="link-btn" id="signup-to-login">Log In</button></p>
+    </div>
+  </div>
+
+  <!-- ===== TOAST CONTAINER ===== -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
   <script src="/app.js"></script>
 </body>

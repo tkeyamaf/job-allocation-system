@@ -1,6 +1,6 @@
 /* =========================================
    CareerBridge — app.js
-   Single-page navigation + API integration
+   Single-page app: auth, jobs, dashboard
    Pure vanilla JS, no external libraries
    ========================================= */
 
@@ -9,27 +9,116 @@
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-const API_BASE = '';  // relative URLs — served from same origin
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const API_BASE = '';
+const TOKEN_KEY = 'cb_token';
+const USER_KEY  = 'cb_user';
+const UUID_RE   = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const REASON_MESSAGES = {
   FIT_THRESHOLD:      'Your fit score is below the minimum required threshold of 70. Try improving your profile score.',
   JOB_CAP:            'This job has reached its maximum allocation limit of 12 placements this week. Check back next week.',
   COMPANY_CAP:        'This company has reached its weekly allocation limit of 30 placements. Try other companies.',
-  STUDENT_WEEKLY_CAP: 'You\'ve reached your weekly application limit of 5. New slots open next Monday.',
+  STUDENT_WEEKLY_CAP: "You've reached your weekly application limit of 5. New slots open next Monday.",
   COOLDOWN:           'You recently applied to this job. You must wait for your cooldown period to expire before reapplying.',
-  JOB_NOT_FOUND:      'We couldn\'t find this job in our system. Please verify the Job ID.',
-  COMPANY_MISMATCH:   'The Company ID doesn\'t match this job\'s employer. Please double-check both IDs.',
+  JOB_NOT_FOUND:      "We couldn't find this job in our system. Please verify the Job ID.",
+  COMPANY_MISMATCH:   "The Company ID doesn't match this job's employer. Please double-check both IDs.",
 };
 
-const SECTIONS = ['home', 'jobs', 'eligibility', 'recommendations', 'profile', 'applications', 'about'];
+const SECTIONS = ['home', 'jobs', 'eligibility', 'recommendations', 'profile', 'dashboard', 'about'];
 
 // ---------------------------------------------------------------------------
-// Navigation
+// Application State
 // ---------------------------------------------------------------------------
+const state = {
+  currentUser: null,   // null when logged out
+  token: null,         // JWT token string
+  jobs: [],            // cached job listing array
+  savedJobIds: new Set(), // set of job IDs saved by the current user
+};
+
+// ---------------------------------------------------------------------------
+// Utility helpers
+// ---------------------------------------------------------------------------
+function isUuid(val) {
+  return UUID_RE.test((val || '').trim());
+}
+
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = String(str || '');
+  return d.innerHTML;
+}
+
+function formatDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function authHeaders() {
+  return state.token ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.token}` }
+                     : { 'Content-Type': 'application/json' };
+}
+
+function setFieldError(inputEl, errorEl, msg) {
+  if (msg) {
+    if (inputEl) inputEl.classList.add('invalid');
+    if (errorEl) errorEl.textContent = msg;
+  } else {
+    if (inputEl) inputEl.classList.remove('invalid');
+    if (errorEl) errorEl.textContent = '';
+  }
+}
+
+function clearFieldErrors(...ids) {
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = '';
+    const input = document.getElementById(id.replace(/-err$/, ''));
+    if (input) input.classList.remove('invalid');
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Toast Notifications
+// ---------------------------------------------------------------------------
+function showToast(message, type = 'success') {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+  const toast = document.createElement('div');
+  toast.className = `toast toast--${type}`;
+  toast.innerHTML = `<span class="toast-icon">${icons[type] || '💬'}</span><span>${escHtml(message)}</span>`;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add('hiding');
+    toast.addEventListener('animationend', () => toast.remove(), { once: true });
+  }, 3000);
+}
+
+// ---------------------------------------------------------------------------
+// Navigation / Section Management
+// ---------------------------------------------------------------------------
+let jobsLoaded = false;
+
 function showSection(name) {
   if (!SECTIONS.includes(name)) name = 'home';
+
+  // Protect dashboard
+  if (name === 'dashboard' && !state.currentUser) {
+    renderDashboardGate();
+  }
+
+  // Protect profile
+  if (name === 'profile') {
+    if (!state.currentUser) {
+      showProfileGate();
+    } else {
+      showProfileForm();
+    }
+  }
 
   SECTIONS.forEach(id => {
     const el = document.getElementById(`section-${id}`);
@@ -44,1227 +133,1201 @@ function showSection(name) {
   history.replaceState(null, '', `#${name}`);
   window.scrollTo({ top: 0, behavior: 'instant' });
 
-  // Lazy-load jobs section on first visit
-  if (name === 'jobs' && !jobsLoaded) {
-    loadJobs();
-  }
+  if (name === 'jobs' && !jobsLoaded) loadJobs();
+  if (name === 'dashboard' && state.currentUser) loadDashboard();
+  if (name === 'eligibility') populateEligJobSelect();
+  if (name === 'recommendations') prefillRecommendations();
 }
 
 function closeMenu() {
   const hamburger = document.getElementById('hamburger');
   const navLinks  = document.getElementById('nav-links');
-  if (hamburger) {
-    hamburger.classList.remove('open');
-    hamburger.setAttribute('aria-expanded', 'false');
-  }
-  if (navLinks) navLinks.classList.remove('open');
+  if (hamburger) { hamburger.classList.remove('open'); hamburger.setAttribute('aria-expanded', 'false'); }
+  if (navLinks)  navLinks.classList.remove('open');
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Auth: Update nav based on login state
 // ---------------------------------------------------------------------------
-function isUuid(val) {
-  return UUID_RE.test((val || '').trim());
-}
+function updateNav() {
+  const navAuth  = document.getElementById('nav-auth');
+  const navUser  = document.getElementById('nav-user');
+  const userName = document.getElementById('nav-user-name');
+  const avatar   = document.getElementById('nav-avatar');
 
-function escHtml(str) {
-  const d = document.createElement('div');
-  d.textContent = String(str || '');
-  return d.innerHTML;
-}
-
-function setFieldError(inputEl, errorEl, msg) {
-  if (msg) {
-    if (inputEl) inputEl.classList.add('invalid');
-    if (errorEl) errorEl.textContent = msg;
+  if (state.currentUser) {
+    if (navAuth) navAuth.style.display = 'none';
+    if (navUser) navUser.style.display = 'flex';
+    if (userName) userName.textContent = state.currentUser.fullName?.split(' ')[0] || 'You';
+    if (avatar)   avatar.textContent   = (state.currentUser.fullName || 'U')[0].toUpperCase();
   } else {
-    if (inputEl) inputEl.classList.remove('invalid');
-    if (errorEl) errorEl.textContent = '';
+    if (navAuth) navAuth.style.display = 'flex';
+    if (navUser) navUser.style.display = 'none';
   }
 }
 
-function clearFieldError(inputEl, errorEl) {
-  setFieldError(inputEl, errorEl, '');
+// ---------------------------------------------------------------------------
+// Auth: Check localStorage token on page load
+// ---------------------------------------------------------------------------
+async function checkAuth() {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) return;
+
+  state.token = token;
+
+  // Try to restore from localStorage cache first for instant UI
+  const cached = localStorage.getItem(USER_KEY);
+  if (cached) {
+    try { state.currentUser = JSON.parse(cached); } catch { /* ignore */ }
+  }
+
+  // Then verify with server
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/me`, { headers: authHeaders() });
+    if (res.ok) {
+      const user = await res.json();
+      state.currentUser = user;
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+    } else {
+      // Token expired or invalid
+      clearAuth();
+    }
+  } catch {
+    // Network error — keep cached user if present
+  }
+
+  updateNav();
 }
 
-function setButtonLoading(btn, loading) {
-  const text    = btn.querySelector('.btn-text');
-  const spinner = btn.querySelector('.btn-spinner');
-  btn.disabled = loading;
-  if (text)    text.classList.toggle('hidden', loading);
-  if (spinner) spinner.classList.toggle('hidden', !loading);
-}
-
-function showError(el, msg) {
-  if (!el) return;
-  el.textContent = '\u26A0 ' + msg;
-  el.classList.remove('hidden');
-}
-
-function hideError(el) {
-  if (!el) return;
-  el.classList.add('hidden');
-  el.textContent = '';
-}
-
-function showBanner(el, msg) {
-  if (!el) return;
-  el.textContent = msg;
-  el.classList.remove('hidden');
-}
-
-function hideBanner(el) {
-  if (!el) return;
-  el.classList.add('hidden');
-  el.textContent = '';
-}
-
-function statusClass(status) {
-  if (!status) return 'status-closed';
-  const s = status.toUpperCase();
-  if (s === 'OPEN')     return 'status-open';
-  if (s === 'REOPENED') return 'status-reopened';
-  return 'status-closed';
-}
-
-function fitBarClass(score) {
-  if (score < 50) return 'fit-low';
-  if (score < 75) return 'fit-mid';
-  return 'fit-high';
+function clearAuth() {
+  state.currentUser = null;
+  state.token = null;
+  state.savedJobIds = new Set();
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
 }
 
 // ---------------------------------------------------------------------------
-// Job card template
+// Auth: Signup
 // ---------------------------------------------------------------------------
-function buildJobCard(job) {
-  const title       = escHtml(job.title     || 'Untitled Position');
-  const company     = escHtml(job.company   || 'Unknown Company');
-  const location    = escHtml(job.location  || '\u2014');
-  const description = escHtml(job.description || '');
-  const status      = (job.status || 'CLOSED').toUpperCase();
-  const jobType     = escHtml(job.jobType   || '');
-  const score       = Math.round(Number(job.fitScore || job.fitScoreMin) || 70);
-  const url         = job.url || null;
-  const barClass    = fitBarClass(score);
-  const sBadge      = statusClass(status);
+async function signup(fullName, email, password) {
+  const res = await fetch(`${API_BASE}/api/auth/signup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fullName, email, password }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Signup failed');
+  return data;
+}
 
-  const titleEscaped    = title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-  const companyEscaped  = company.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-  const descEscaped     = escHtml(job.description || '').replace(/'/g, "\\'");
+// ---------------------------------------------------------------------------
+// Auth: Login
+// ---------------------------------------------------------------------------
+async function login(email, password) {
+  const res = await fetch(`${API_BASE}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Login failed');
+  return data;
+}
 
-  const actionBtn = url
-    ? `<div class="job-card-actions">
-         <a href="${escHtml(url)}" target="_blank" rel="noopener" class="job-view-btn">View Details &#8594;</a>
-         <button class="interview-prep-btn" type="button" onclick="openInterviewModal('${titleEscaped}', '${descEscaped}')">&#127919; Interview Prep</button>
-         <button class="interview-prep-btn" type="button" onclick="trackApplicationFromCard('${titleEscaped}', '${companyEscaped}')">+ Track</button>
-       </div>`
-    : `<div class="job-card-actions">
-         <button class="job-view-btn" type="button" onclick="void(0)">View Details &#8594;</button>
-         <button class="interview-prep-btn" type="button" onclick="openInterviewModal('${titleEscaped}', '${descEscaped}')">&#127919; Interview Prep</button>
-         <button class="interview-prep-btn" type="button" onclick="trackApplicationFromCard('${titleEscaped}', '${companyEscaped}')">+ Track</button>
-       </div>`;
+// ---------------------------------------------------------------------------
+// Auth: Logout
+// ---------------------------------------------------------------------------
+function logout() {
+  clearAuth();
+  updateNav();
+  jobsLoaded = false;
+  showSection('home');
+  showToast('You have been logged out.', 'info');
+}
 
-  const jobTypeBadge = jobType
-    ? `<span class="job-type-badge">${jobType}</span>`
+// ---------------------------------------------------------------------------
+// Jobs: Load & Render
+// ---------------------------------------------------------------------------
+async function loadJobs(query = '', statusFilter = '', locationFilter = '') {
+  const grid  = document.getElementById('jobs-grid');
+  const empty = document.getElementById('jobs-empty');
+  const error = document.getElementById('jobs-error');
+
+  if (!grid) return;
+
+  // Show skeletons
+  grid.innerHTML = [1,2,3,4,5,6].map(() =>
+    `<div class="job-card skeleton-card">
+       <div class="skel skel-h"></div>
+       <div class="skel skel-m"></div>
+       <div class="skel skel-s"></div>
+     </div>`
+  ).join('');
+  if (empty) empty.style.display = 'none';
+  if (error) error.style.display = 'none';
+  grid.style.display = 'grid';
+
+  const params = new URLSearchParams();
+  if (query)          params.set('search',   query);
+  if (statusFilter)   params.set('status',   statusFilter);
+  if (locationFilter) params.set('location', locationFilter);
+
+  try {
+    const res = await fetch(`${API_BASE}/api/jobs?${params}`);
+    if (!res.ok) throw new Error('Failed to fetch jobs');
+
+    const jobs = await res.json();
+    state.jobs = jobs;
+
+    // Also load saved jobs if logged in
+    if (state.currentUser) {
+      await refreshSavedJobIds();
+    }
+
+    if (jobs.length === 0) {
+      grid.style.display = 'none';
+      if (empty) empty.style.display = 'block';
+    } else {
+      grid.innerHTML = jobs.map(job => renderJobCard(job, { showSave: true, showApply: true })).join('');
+      jobsLoaded = true;
+    }
+
+    // Show fit score badge if logged in
+    const fitBadge = document.getElementById('jobs-fit-badge');
+    const fitVal   = document.getElementById('jobs-fit-score-val');
+    if (fitBadge && fitVal && state.currentUser) {
+      fitBadge.style.display = 'inline-block';
+      fitVal.textContent = state.currentUser.fitScore ?? '—';
+    }
+  } catch (err) {
+    console.error('loadJobs error:', err);
+    grid.style.display = 'none';
+    if (error) error.style.display = 'block';
+  }
+}
+
+async function refreshSavedJobIds() {
+  try {
+    const res = await fetch(`${API_BASE}/api/jobs/saved`, { headers: authHeaders() });
+    if (res.ok) {
+      const saved = await res.json();
+      state.savedJobIds = new Set(saved.map(j => j.job_id));
+    }
+  } catch { /* silent */ }
+}
+
+function renderJobCard(job, options = {}) {
+  const { showSave = false, showApply = false, showRemove = false } = options;
+  const status = (job.status || 'OPEN').toUpperCase();
+  const statusClass = status === 'OPEN' ? 'open' : status === 'REOPENED' ? 'reopened' : 'closed';
+  const fitMin = job.fitScoreMin ?? job.fit_score_min ?? 70;
+  const isSaved = state.savedJobIds.has(job.id || job.job_id);
+
+  const saveBtn = showSave
+    ? `<button class="btn-save ${isSaved ? 'saved' : ''}" data-job-id="${escHtml(job.id)}" onclick="toggleSaveJob(this)"
+         title="${isSaved ? 'Unsave job' : 'Save job'}" aria-label="${isSaved ? 'Unsave' : 'Save'}">
+         ${isSaved ? '🔖' : '🔖'}
+       </button>`
+    : '';
+
+  const applyBtn = showApply
+    ? `<button class="btn btn-primary btn-sm" onclick="applyToJobById('${escHtml(job.id)}')">Apply Now</button>`
+    : '';
+
+  const removeBtn = showRemove
+    ? `<button class="btn btn-outline btn-sm" onclick="removeSavedJob('${escHtml(job.job_id || job.id)}', this)">Remove</button>`
     : '';
 
   return `
-    <article class="job-card">
-      <div class="job-card-header">
-        <span class="job-title">${title}</span>
-        <span class="status-badge ${sBadge}">${escHtml(status)}</span>
+    <div class="job-card" data-job-id="${escHtml(job.id || job.job_id)}">
+      <div class="job-card-top">
+        <div>
+          <div class="job-title">${escHtml(job.title || job.job_title)}</div>
+        </div>
+        <span class="status-badge status-badge--${statusClass}">${escHtml(status)}</span>
       </div>
       <div class="job-meta">
-        <span class="job-company">&#127970; ${company}</span>
-        <span class="job-location">&#128205; ${location}</span>
+        <div class="job-company">${escHtml(job.company)}</div>
+        <div class="job-location">📍 ${escHtml(job.location || 'Location not specified')}</div>
       </div>
-      ${jobTypeBadge}
-      ${description ? `<p class="job-description">${description}</p>` : ''}
-      <div class="job-fit">
-        <span class="fit-label">Fit</span>
-        <div class="fit-bar-track">
-          <div class="fit-bar-fill ${barClass}" style="width: ${score}%" data-width="${score}"></div>
-        </div>
-        <span class="fit-value">${score}</span>
+      ${job.jobType ? `<span class="job-type-badge">${escHtml(job.jobType)}</span>` : ''}
+      <p class="job-desc">${escHtml(job.description || '')}</p>
+      <div class="job-fit-bar-wrap">
+        <div class="job-fit-label">Min fit score: ${escHtml(String(fitMin))}</div>
+        <div class="job-fit-bar"><div class="job-fit-fill" style="width:${fitMin}%"></div></div>
       </div>
-      ${actionBtn}
-    </article>
-  `;
-}
-
-function animateFitBars(container) {
-  requestAnimationFrame(() => {
-    container.querySelectorAll('.fit-bar-fill').forEach(bar => {
-      const target = bar.dataset.width + '%';
-      bar.style.width = '0';
-      setTimeout(() => { bar.style.width = target; }, 40);
-    });
-  });
-}
-
-// ---------------------------------------------------------------------------
-// JOBS SECTION
-// ---------------------------------------------------------------------------
-let jobsLoaded = false;
-let allJobsData = [];
-
-function loadJobs(search, status, location) {
-  const resultsEl  = document.getElementById('jobs-results');
-  const emptyEl    = document.getElementById('jobs-empty');
-  const loadingEl  = document.getElementById('jobs-loading');
-  const errorEl    = document.getElementById('jobs-error');
-  const countEl    = document.getElementById('jobs-count');
-
-  if (!resultsEl) return;
-
-  jobsLoaded = true;
-
-  hideError(errorEl);
-  emptyEl.classList.add('hidden');
-  resultsEl.innerHTML = '';
-  loadingEl.classList.remove('hidden');
-  if (countEl) countEl.textContent = '';
-
-  const params = new URLSearchParams();
-  if (search)   params.set('search',   search);
-  if (status)   params.set('status',   status);
-  if (location) params.set('location', location);
-
-  const url = `${API_BASE}/api/jobs${params.toString() ? '?' + params.toString() : ''}`;
-
-  fetch(url)
-    .then(res => {
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
-      return res.json();
-    })
-    .then(data => {
-      loadingEl.classList.add('hidden');
-      allJobsData = Array.isArray(data) ? data : [];
-
-      if (allJobsData.length === 0) {
-        emptyEl.classList.remove('hidden');
-        if (countEl) countEl.textContent = '0 jobs';
-        return;
-      }
-
-      resultsEl.innerHTML = allJobsData.map(buildJobCard).join('');
-      animateFitBars(resultsEl);
-
-      if (countEl) {
-        countEl.textContent = `${allJobsData.length} job${allJobsData.length !== 1 ? 's' : ''}`;
-      }
-    })
-    .catch(err => {
-      loadingEl.classList.add('hidden');
-      showError(errorEl, 'Could not load jobs. Please check your connection and try again.');
-      console.error(err);
-    });
-}
-
-function initJobsSection() {
-  const searchInput  = document.getElementById('jobs-search-input');
-  const statusFilter = document.getElementById('jobs-status-filter');
-  const locationFilter = document.getElementById('jobs-location-filter');
-  const searchBtn    = document.getElementById('jobs-search-btn');
-
-  if (!searchBtn) return;
-
-  // Trigger search on button click
-  searchBtn.addEventListener('click', () => {
-    const search   = (searchInput   ? searchInput.value.trim()   : '');
-    const status   = (statusFilter  ? statusFilter.value         : '');
-    const location = (locationFilter ? locationFilter.value.trim() : '');
-    loadJobs(search || undefined, status || undefined, location || undefined);
-  });
-
-  // Trigger search on Enter in inputs
-  [searchInput, locationFilter].forEach(input => {
-    if (!input) return;
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') searchBtn.click();
-    });
-  });
-}
-
-// ---------------------------------------------------------------------------
-// ELIGIBILITY SECTION
-// ---------------------------------------------------------------------------
-function initEligibilitySection() {
-  const form       = document.getElementById('eligibility-form');
-  const studentIn  = document.getElementById('elig-student-id');
-  const jobIn      = document.getElementById('elig-job-id');
-  const companyIn  = document.getElementById('elig-company-id');
-  const fitSlider  = document.getElementById('elig-fit-score');
-  const fitDisplay = document.getElementById('elig-fit-score-display');
-  const statusSel  = document.getElementById('elig-job-status');
-  const studentErr = document.getElementById('elig-student-id-error');
-  const jobErr     = document.getElementById('elig-job-id-error');
-  const companyErr = document.getElementById('elig-company-id-error');
-  const submitBtn  = document.getElementById('elig-submit-btn');
-  const resultEl   = document.getElementById('elig-result-panel');
-  const errorEl    = document.getElementById('elig-error');
-
-  if (!form) return;
-
-  // Live slider display
-  if (fitSlider && fitDisplay) {
-    fitSlider.addEventListener('input', () => {
-      fitDisplay.textContent = fitSlider.value;
-    });
-  }
-
-  // Live validation clearing
-  if (studentIn) studentIn.addEventListener('input', () => clearFieldError(studentIn, studentErr));
-  if (jobIn)     jobIn.addEventListener('input',     () => clearFieldError(jobIn, jobErr));
-  if (companyIn) companyIn.addEventListener('input', () => clearFieldError(companyIn, companyErr));
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    hideError(errorEl);
-
-    const studentId = studentIn ? studentIn.value.trim() : '';
-    const jobId     = jobIn     ? jobIn.value.trim()     : '';
-    const companyId = companyIn ? companyIn.value.trim() : '';
-    const fitScore  = fitSlider ? fitSlider.value        : '75';
-    const jobStatus = statusSel ? statusSel.value        : 'OPEN';
-
-    let valid = true;
-
-    if (!isUuid(studentId)) {
-      setFieldError(studentIn, studentErr, 'Please enter a valid UUID (e.g. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)');
-      valid = false;
-    } else { clearFieldError(studentIn, studentErr); }
-
-    if (!isUuid(jobId)) {
-      setFieldError(jobIn, jobErr, 'Please enter a valid UUID');
-      valid = false;
-    } else { clearFieldError(jobIn, jobErr); }
-
-    if (!isUuid(companyId)) {
-      setFieldError(companyIn, companyErr, 'Please enter a valid UUID');
-      valid = false;
-    } else { clearFieldError(companyIn, companyErr); }
-
-    if (!valid) return;
-
-    setButtonLoading(submitBtn, true);
-    resultEl.innerHTML = '<div class="loading-state"><div class="loading-spinner-lg"></div><p>Checking eligibility...</p></div>';
-
-    try {
-      const params = new URLSearchParams({ studentId, jobId, companyId, fitScore, jobStatus });
-      const res    = await fetch(`${API_BASE}/allocate/check?${params}`);
-      const data   = await res.json();
-
-      if (!res.ok && res.status !== 422) {
-        showError(errorEl, data.error || `Request failed (${res.status})`);
-        resultEl.innerHTML = getEligibilityPlaceholderHTML();
-        return;
-      }
-
-      renderEligibilityResult(resultEl, data);
-    } catch (err) {
-      showError(errorEl, 'Network error — please check your connection and try again.');
-      resultEl.innerHTML = getEligibilityPlaceholderHTML();
-    } finally {
-      setButtonLoading(submitBtn, false);
-    }
-  });
-}
-
-function getEligibilityPlaceholderHTML() {
-  return `
-    <div class="result-placeholder">
-      <div class="result-placeholder-icon">&#128270;</div>
-      <p>Fill in the form and click <strong>Check Allocation</strong> to see the eligibility result here.</p>
+      <div class="job-actions">
+        ${saveBtn}
+        ${applyBtn}
+        ${removeBtn}
+      </div>
     </div>
   `;
 }
 
-function renderEligibilityResult(container, data) {
-  const allowed     = data.allowed === true;
-  const reason      = data.reason || null;
-  const humanReason = reason ? (REASON_MESSAGES[reason] || reason) : null;
-
-  if (allowed) {
-    container.innerHTML = `
-      <div class="result-eligible">
-        <div class="result-status-row">
-          <span class="result-icon">&#9989;</span>
-          <span class="result-status-text">Eligible!</span>
-        </div>
-        <div class="result-reason-box">
-          <div class="result-reason-label">Status</div>
-          <p class="result-reason-text">This student meets all requirements and can be allocated to this job.</p>
-        </div>
-      </div>
-    `;
-  } else {
-    const reasonHtml = humanReason ? `
-      <div class="result-reason-box">
-        <div class="result-reason-label">Reason</div>
-        ${reason ? `<code class="result-reason-code">${escHtml(reason)}</code>` : ''}
-        <p class="result-reason-text">${escHtml(humanReason)}</p>
-      </div>
-    ` : '';
-
-    container.innerHTML = `
-      <div class="result-ineligible">
-        <div class="result-status-row">
-          <span class="result-icon">&#10060;</span>
-          <span class="result-status-text">Not Eligible</span>
-        </div>
-        ${reasonHtml}
-      </div>
-    `;
+// ---------------------------------------------------------------------------
+// Jobs: Save / Unsave
+// ---------------------------------------------------------------------------
+async function toggleSaveJob(btn) {
+  if (!state.currentUser) {
+    openModal('login-modal');
+    return;
   }
-}
+  const jobId = btn.dataset.jobId;
+  const job = state.jobs.find(j => j.id === jobId);
+  if (!job) return;
 
-// ---------------------------------------------------------------------------
-// RECOMMENDATIONS SECTION
-// ---------------------------------------------------------------------------
-function initRecommendationsSection() {
-  const form       = document.getElementById('rec-form');
-  const studentIn  = document.getElementById('rec-student-id');
-  const fitSlider  = document.getElementById('rec-fit-score');
-  const fitDisplay = document.getElementById('rec-fit-score-display');
-  const studentErr = document.getElementById('rec-student-id-error');
-  const submitBtn  = document.getElementById('rec-submit-btn');
-  const resultsEl  = document.getElementById('rec-results');
-  const emptyEl    = document.getElementById('rec-empty');
-  const loadingEl  = document.getElementById('rec-loading');
-  const errorEl    = document.getElementById('rec-error');
+  const isSaved = state.savedJobIds.has(jobId);
+  btn.disabled = true;
 
-  if (!form) return;
-
-  // Live slider display
-  if (fitSlider && fitDisplay) {
-    fitSlider.addEventListener('input', () => {
-      fitDisplay.textContent = fitSlider.value;
-    });
-  }
-
-  if (studentIn) studentIn.addEventListener('input', () => clearFieldError(studentIn, studentErr));
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    hideError(errorEl);
-
-    const studentId = studentIn ? studentIn.value.trim() : '';
-    const fitScore  = fitSlider ? fitSlider.value : '75';
-
-    let valid = true;
-
-    if (!isUuid(studentId)) {
-      setFieldError(studentIn, studentErr, 'Please enter a valid UUID (e.g. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)');
-      valid = false;
-    } else { clearFieldError(studentIn, studentErr); }
-
-    if (!valid) return;
-
-    setButtonLoading(submitBtn, true);
-    if (resultsEl) resultsEl.innerHTML = '';
-    if (emptyEl)   emptyEl.classList.add('hidden');
-    if (loadingEl) loadingEl.classList.remove('hidden');
-
-    try {
-      const url  = `${API_BASE}/jobs/recommend?studentId=${encodeURIComponent(studentId)}&fitScore=${encodeURIComponent(fitScore)}`;
-      const res  = await fetch(url);
-      const data = await res.json();
-
-      if (!res.ok) {
-        const msg = data.error || `Request failed (${res.status})`;
-        showError(errorEl, msg);
-        return;
-      }
-
-      const jobs = Array.isArray(data) ? data : [];
-      if (resultsEl) {
-        resultsEl.innerHTML = jobs.map(buildJobCard).join('');
-        if (jobs.length > 0) animateFitBars(resultsEl);
-      }
-      if (emptyEl) emptyEl.classList.toggle('hidden', jobs.length > 0);
-
-    } catch (err) {
-      showError(errorEl, 'Network error — please check your connection and try again.');
-    } finally {
-      setButtonLoading(submitBtn, false);
-      if (loadingEl) loadingEl.classList.add('hidden');
-    }
-  });
-}
-
-// ---------------------------------------------------------------------------
-// TAGS INPUT
-// ---------------------------------------------------------------------------
-function initTagsInput(wrapperId, tagsContainerId, inputId) {
-  const wrapper   = document.getElementById(wrapperId);
-  const container = document.getElementById(tagsContainerId);
-  const input     = document.getElementById(inputId);
-
-  if (!wrapper || !container || !input) return { getTags: () => [] };
-
-  const tags = [];
-
-  function render() {
-    container.innerHTML = tags.map((tag, i) =>
-      `<span class="tag-chip">
-        ${escHtml(tag)}
-        <button type="button" class="tag-chip-remove" data-index="${i}" aria-label="Remove ${escHtml(tag)}">&#10005;</button>
-      </span>`
-    ).join('');
-
-    // Attach remove listeners
-    container.querySelectorAll('.tag-chip-remove').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const idx = parseInt(btn.dataset.index, 10);
-        tags.splice(idx, 1);
-        render();
+  try {
+    if (isSaved) {
+      const res = await fetch(`${API_BASE}/api/jobs/save/${encodeURIComponent(jobId)}`, {
+        method: 'DELETE', headers: authHeaders(),
       });
-    });
-  }
-
-  function addTag(value) {
-    const trimmed = value.trim();
-    if (trimmed && !tags.includes(trimmed)) {
-      tags.push(trimmed);
-      render();
-    }
-    input.value = '';
-  }
-
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault();
-      addTag(input.value);
-    }
-    // Backspace on empty input removes last tag
-    if (e.key === 'Backspace' && input.value === '' && tags.length > 0) {
-      tags.pop();
-      render();
-    }
-  });
-
-  input.addEventListener('blur', () => {
-    if (input.value.trim()) addTag(input.value);
-  });
-
-  // Click wrapper to focus input
-  wrapper.addEventListener('click', () => input.focus());
-
-  return { getTags: () => [...tags] };
-}
-
-// ---------------------------------------------------------------------------
-// PROFILE SECTION
-// ---------------------------------------------------------------------------
-function initProfileSection() {
-  const form           = document.getElementById('profile-form');
-  const submitBtn      = document.getElementById('profile-submit-btn');
-  const successBanner  = document.getElementById('profile-success');
-  const errorBanner    = document.getElementById('profile-error');
-
-  if (!form) return;
-
-  // Profile picture preview
-  const picBtn   = document.getElementById('profile-picture-btn');
-  const picInput = document.getElementById('profile-picture-input');
-  const picImg   = document.getElementById('profile-picture-img');
-  const picHolder = document.getElementById('profile-picture-placeholder');
-  const picPreview = document.getElementById('profile-picture-preview');
-
-  if (picBtn && picInput) {
-    picBtn.addEventListener('click', () => picInput.click());
-    picPreview.addEventListener('click', () => picInput.click());
-
-    picInput.addEventListener('change', () => {
-      const file = picInput.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (picImg) {
-          picImg.src = e.target.result;
-          picImg.classList.remove('hidden');
-        }
-        if (picHolder) picHolder.classList.add('hidden');
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
-  // Summary character counter
-  const summaryTextarea = document.getElementById('pf-summary');
-  const summaryCount    = document.getElementById('pf-summary-count');
-  if (summaryTextarea && summaryCount) {
-    summaryTextarea.addEventListener('input', () => {
-      summaryCount.textContent = summaryTextarea.value.length;
-    });
-  }
-
-  // Resume drag & drop
-  const dropArea     = document.getElementById('resume-drop-area');
-  const resumeInput  = document.getElementById('resume-input');
-  const browseBtn    = document.getElementById('resume-browse-btn');
-  const fileDisplay  = document.getElementById('resume-file-display');
-  const fileName     = document.getElementById('resume-file-name');
-  const removeBtn    = document.getElementById('resume-remove-btn');
-
-  if (browseBtn && resumeInput) {
-    browseBtn.addEventListener('click', () => resumeInput.click());
-  }
-
-  if (dropArea && resumeInput) {
-    dropArea.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dropArea.classList.add('drag-over');
-    });
-
-    dropArea.addEventListener('dragleave', () => {
-      dropArea.classList.remove('drag-over');
-    });
-
-    dropArea.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropArea.classList.remove('drag-over');
-      const file = e.dataTransfer.files[0];
-      if (file) handleResumeFile(file);
-    });
-
-    resumeInput.addEventListener('change', () => {
-      if (resumeInput.files[0]) handleResumeFile(resumeInput.files[0]);
-    });
-  }
-
-  function handleResumeFile(file) {
-    if (!fileDisplay || !fileName || !dropArea) return;
-    fileName.textContent = file.name;
-    fileDisplay.classList.remove('hidden');
-    dropArea.classList.add('hidden');
-  }
-
-  if (removeBtn && fileDisplay && dropArea) {
-    removeBtn.addEventListener('click', () => {
-      fileDisplay.classList.add('hidden');
-      dropArea.classList.remove('hidden');
-      if (resumeInput) resumeInput.value = '';
-    });
-  }
-
-  // Initialize all tag inputs and capture their getters
-  const tagsMap = {
-    preferred_titles:    initTagsInput('preferred-titles-wrapper', 'preferred-titles-tags', 'preferred-titles-input'),
-    industries:          initTagsInput('industries-wrapper',        'industries-tags',        'industries-input'),
-    skills:              initTagsInput('skills-wrapper',            'skills-tags',            'skills-input'),
-    certifications:      initTagsInput('certifications-wrapper',    'certifications-tags',    'certifications-input'),
-    preferred_companies: initTagsInput('preferred-companies-wrapper', 'preferred-companies-tags', 'preferred-companies-input'),
-  };
-
-  // Form submit
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    hideBanner(successBanner);
-    hideError(errorBanner);
-
-    const fullName = document.getElementById('pf-full-name');
-    const email    = document.getElementById('pf-email');
-    const fullNameErr = document.getElementById('pf-full-name-error');
-    const emailErr    = document.getElementById('pf-email-error');
-
-    let valid = true;
-
-    if (!fullName || !fullName.value.trim()) {
-      setFieldError(fullName, fullNameErr, 'Full name is required');
-      valid = false;
-    } else { clearFieldError(fullName, fullNameErr); }
-
-    if (!email || !email.value.trim()) {
-      setFieldError(email, emailErr, 'Email address is required');
-      valid = false;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
-      setFieldError(email, emailErr, 'Please enter a valid email address');
-      valid = false;
-    } else { clearFieldError(email, emailErr); }
-
-    if (!valid) return;
-
-    // Gather job types
-    const jobTypeCheckboxes = form.querySelectorAll('input[name="job_types"]:checked');
-    const jobTypes = Array.from(jobTypeCheckboxes).map(cb => cb.value);
-
-    // Gather work setting
-    const workSettingRadio = form.querySelector('input[name="work_setting"]:checked');
-    const workSetting = workSettingRadio ? workSettingRadio.value : 'ANY';
-
-    const payload = {
-      full_name:           fullName.value.trim(),
-      email:               email.value.trim().toLowerCase(),
-      phone:               getVal('pf-phone'),
-      city:                getVal('pf-city'),
-      state:               getVal('pf-state'),
-      preferred_titles:    tagsMap.preferred_titles.getTags(),
-      job_types:           jobTypes.length > 0 ? jobTypes : null,
-      work_setting:        workSetting,
-      salary_min:          getNumVal('pf-salary-min'),
-      salary_max:          getNumVal('pf-salary-max'),
-      years_experience:    getNumVal('pf-years-exp'),
-      industries:          tagsMap.industries.getTags(),
-      timeframe:           getVal('pf-timeframe'),
-      linkedin_url:        getVal('pf-linkedin'),
-      portfolio_url:       getVal('pf-portfolio'),
-      skills:              tagsMap.skills.getTags(),
-      certifications:      tagsMap.certifications.getTags(),
-      education:           getVal('pf-education'),
-      work_authorization:  getVal('pf-work-auth'),
-      availability_date:   getVal('pf-availability') || null,
-      preferred_companies: tagsMap.preferred_companies.getTags(),
-      summary:             getVal('pf-summary'),
-    };
-
-    setButtonLoading(submitBtn, true);
-
-    try {
-      const res  = await fetch(`${API_BASE}/api/candidates`, {
+      if (res.ok) {
+        state.savedJobIds.delete(jobId);
+        btn.classList.remove('saved');
+        showToast('Job removed from saved.', 'info');
+      }
+    } else {
+      const res = await fetch(`${API_BASE}/api/jobs/save`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        headers: authHeaders(),
+        body: JSON.stringify({
+          jobId: job.id,
+          jobTitle: job.title,
+          company: job.company,
+          location: job.location,
+          url: job.url,
+          status: job.status,
+        }),
       });
-      const data = await res.json();
-
-      if (!res.ok) {
-        showError(errorBanner, data.error || `Submission failed (${res.status})`);
-        return;
+      if (res.ok) {
+        state.savedJobIds.add(jobId);
+        btn.classList.add('saved');
+        showToast('Job saved! View it in your dashboard.', 'success');
       }
+    }
+  } catch {
+    showToast('Could not save job. Please try again.', 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
 
-      showBanner(successBanner, 'Your profile has been saved successfully! \uD83C\uDF89');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+async function removeSavedJob(jobId, btn) {
+  if (!state.currentUser) return;
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch(`${API_BASE}/api/jobs/save/${encodeURIComponent(jobId)}`, {
+      method: 'DELETE', headers: authHeaders(),
+    });
+    if (res.ok) {
+      state.savedJobIds.delete(jobId);
+      const card = document.querySelector(`[data-job-id="${jobId}"]`);
+      if (card) card.remove();
+      showToast('Job removed from saved.', 'info');
+      // Refresh dashboard counts
+      updateDashboardCounts();
+    }
+  } catch {
+    showToast('Could not remove job.', 'error');
+    if (btn) btn.disabled = false;
+  }
+}
 
-    } catch (err) {
-      showError(errorBanner, 'Network error — please check your connection and try again.');
-    } finally {
-      setButtonLoading(submitBtn, false);
+// ---------------------------------------------------------------------------
+// Jobs: Apply
+// ---------------------------------------------------------------------------
+async function applyToJobById(jobId) {
+  if (!state.currentUser) {
+    openModal('login-modal');
+    return;
+  }
+  const job = state.jobs.find(j => j.id === jobId);
+  if (!job) return;
+  await applyToJob(job);
+}
+
+async function applyToJob(job) {
+  try {
+    const res = await fetch(`${API_BASE}/api/jobs/apply`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        jobId: job.id || job.job_id,
+        jobTitle: job.title || job.job_title,
+        company: job.company,
+        location: job.location,
+        url: job.url,
+      }),
+    });
+    if (res.status === 401) { openModal('login-modal'); return; }
+    if (res.ok) {
+      showToast(`Applied to ${job.title || job.job_title} at ${job.company}!`, 'success');
+      // Open job link if available
+      if (job.url) window.open(job.url, '_blank', 'noopener');
+    } else {
+      const data = await res.json();
+      showToast(data.message || data.error || 'Could not apply.', 'error');
+    }
+  } catch {
+    showToast('Could not submit application. Please try again.', 'error');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Dashboard
+// ---------------------------------------------------------------------------
+async function loadDashboard() {
+  if (!state.currentUser) { renderDashboardGate(); return; }
+
+  const content = document.getElementById('dashboard-content');
+  const gate    = document.getElementById('dashboard-gate');
+  if (gate)    gate.style.display    = 'none';
+  if (content) content.style.display = 'block';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/dashboard`, { headers: authHeaders() });
+    if (res.status === 401) { renderDashboardGate(); return; }
+    if (!res.ok) throw new Error('Dashboard load failed');
+
+    const data = await res.json();
+    renderDashboard(data);
+  } catch (err) {
+    console.error('loadDashboard error:', err);
+    showToast('Could not load dashboard. Please refresh.', 'error');
+  }
+}
+
+function renderDashboard(data) {
+  const { user, savedJobs, recentApplications } = data;
+
+  // Header
+  const welcome = document.getElementById('dash-welcome-name');
+  const badge   = document.getElementById('dash-student-badge');
+  if (welcome) welcome.textContent = `Welcome back, ${user.fullName?.split(' ')[0] || 'friend'}!`;
+  if (badge)   badge.textContent   = user.studentNumber || '';
+
+  // Fit score ring
+  const fitVal  = document.getElementById('dash-fit-val');
+  const ring    = document.getElementById('fit-progress-ring');
+  if (fitVal) fitVal.textContent = user.fitScore ?? '—';
+  if (ring && user.fitScore != null) {
+    const circumference = 2 * Math.PI * 34; // r=34
+    const offset = circumference - (user.fitScore / 100) * circumference;
+    ring.style.strokeDashoffset = offset;
+  }
+
+  // Saved / apps counts
+  const savedCount = document.getElementById('dash-saved-count');
+  const appsCount  = document.getElementById('dash-apps-count');
+  if (savedCount) savedCount.textContent = savedJobs.length;
+  if (appsCount)  appsCount.textContent  = recentApplications.length;
+
+  // Profile completion %
+  const profilePct = document.getElementById('dash-profile-pct');
+  const profileBar = document.getElementById('dash-profile-bar');
+  const profileHint= document.getElementById('dash-profile-hint');
+  const pct = user.profileComplete ? 100 : 30;
+  if (profilePct)  profilePct.textContent = `${pct}%`;
+  if (profileBar)  profileBar.style.width  = `${pct}%`;
+  if (profileHint) profileHint.textContent = user.profileComplete
+    ? 'Great — your profile is complete!'
+    : 'Complete your profile to unlock better job matches.';
+
+  // Recent applications table
+  const tbody     = document.getElementById('dash-apps-tbody');
+  const appsEmpty = document.getElementById('dash-apps-empty');
+  const appsTable = document.getElementById('dash-apps-table');
+  if (tbody) {
+    if (recentApplications.length === 0) {
+      if (appsTable) appsTable.style.display = 'none';
+      if (appsEmpty) appsEmpty.style.display = 'block';
+    } else {
+      if (appsTable) appsTable.style.display = 'table';
+      if (appsEmpty) appsEmpty.style.display = 'none';
+      tbody.innerHTML = recentApplications.map(app => {
+        const status = (app.status || 'APPLIED').toUpperCase();
+        const badgeClass = status === 'APPLIED' ? 'applied' : status === 'OPEN' ? 'open' : 'closed';
+        return `<tr>
+          <td><strong>${escHtml(app.job_title)}</strong></td>
+          <td>${escHtml(app.company)}</td>
+          <td><span class="status-badge status-badge--${badgeClass}">${escHtml(status)}</span></td>
+          <td>${formatDate(app.applied_at)}</td>
+        </tr>`;
+      }).join('');
+    }
+  }
+
+  // Saved jobs grid
+  const savedGrid  = document.getElementById('dash-saved-grid');
+  const savedEmpty = document.getElementById('dash-saved-empty');
+  if (savedGrid) {
+    if (savedJobs.length === 0) {
+      savedGrid.style.display = 'none';
+      if (savedEmpty) savedEmpty.style.display = 'block';
+    } else {
+      savedGrid.style.display = 'grid';
+      if (savedEmpty) savedEmpty.style.display = 'none';
+      savedGrid.innerHTML = savedJobs.map(sj => renderJobCard({
+        id: sj.job_id,
+        job_id: sj.job_id,
+        title: sj.job_title,
+        job_title: sj.job_title,
+        company: sj.company,
+        location: sj.location,
+        url: sj.url,
+        status: sj.status,
+      }, { showRemove: true, showApply: true })).join('');
+    }
+  }
+
+  // Update saved IDs set
+  state.savedJobIds = new Set(savedJobs.map(j => j.job_id));
+}
+
+function updateDashboardCounts() {
+  // Refresh dashboard if it's visible
+  const dashSection = document.getElementById('section-dashboard');
+  if (dashSection && dashSection.classList.contains('active') && state.currentUser) {
+    loadDashboard();
+  }
+}
+
+function renderDashboardGate() {
+  const content = document.getElementById('dashboard-content');
+  const gate    = document.getElementById('dashboard-gate');
+  if (gate)    gate.style.display    = 'block';
+  if (content) content.style.display = 'none';
+}
+
+// ---------------------------------------------------------------------------
+// Profile Page
+// ---------------------------------------------------------------------------
+function showProfileGate() {
+  const gate = document.getElementById('profile-gate');
+  const form = document.getElementById('profile-form');
+  if (gate) gate.style.display = 'block';
+  if (form) form.style.display = 'none';
+}
+
+function showProfileForm() {
+  const gate = document.getElementById('profile-gate');
+  const form = document.getElementById('profile-form');
+  if (gate) gate.style.display = 'none';
+  if (form) form.style.display = 'block';
+
+  // Pre-fill name and email from state
+  if (state.currentUser) {
+    const nameEl  = document.getElementById('p-full-name');
+    const emailEl = document.getElementById('p-email');
+    const cityEl  = document.getElementById('p-city');
+    const stateEl = document.getElementById('p-state');
+    const phoneEl = document.getElementById('p-phone');
+    if (nameEl  && !nameEl.value)  nameEl.value  = state.currentUser.fullName  || '';
+    if (emailEl && !emailEl.value) emailEl.value = state.currentUser.email     || '';
+    if (cityEl  && !cityEl.value)  cityEl.value  = state.currentUser.city      || '';
+    if (stateEl && !stateEl.value) stateEl.value = state.currentUser.state     || '';
+    if (phoneEl && !phoneEl.value) phoneEl.value = state.currentUser.phone     || '';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Tags Input
+// ---------------------------------------------------------------------------
+function setupTagsInput(inputId, tagsId, hiddenId) {
+  const input  = document.getElementById(inputId);
+  const tags   = document.getElementById(tagsId);
+  const hidden = document.getElementById(hiddenId);
+  if (!input || !tags || !hidden) return;
+
+  const tagValues = [];
+
+  function renderTags() {
+    tags.innerHTML = tagValues.map((v, i) =>
+      `<span class="tag">${escHtml(v)} <button type="button" class="tag-remove" data-idx="${i}" aria-label="Remove ${escHtml(v)}">×</button></span>`
+    ).join('');
+    hidden.value = tagValues.join(',');
+
+    tags.querySelectorAll('.tag-remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        tagValues.splice(Number(btn.dataset.idx), 1);
+        renderTags();
+      });
+    });
+  }
+
+  input.addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ',') && input.value.trim()) {
+      e.preventDefault();
+      const val = input.value.trim().replace(/,$/, '');
+      if (val && !tagValues.includes(val)) {
+        tagValues.push(val);
+        renderTags();
+      }
+      input.value = '';
     }
   });
 
-  // Live clear errors on required fields
-  ['pf-full-name', 'pf-email'].forEach(id => {
-    const el  = document.getElementById(id);
-    const err = document.getElementById(id + '-error');
-    if (el) el.addEventListener('input', () => clearFieldError(el, err));
+  // Click on wrap to focus input
+  const wrap = document.getElementById(inputId.replace('-input', '-wrap'));
+  if (wrap) wrap.addEventListener('click', () => input.focus());
+}
+
+// ---------------------------------------------------------------------------
+// Resume Drag & Drop
+// ---------------------------------------------------------------------------
+function setupResumeDropZone() {
+  const zone     = document.getElementById('resume-drop-zone');
+  const fileInput= document.getElementById('resume-file');
+  const fileLabel= document.getElementById('resume-file-name');
+  if (!zone || !fileInput) return;
+
+  zone.addEventListener('click', () => fileInput.click());
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) showResumeFile(file, fileLabel);
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) showResumeFile(fileInput.files[0], fileLabel);
   });
 }
 
-function getVal(id) {
-  const el = document.getElementById(id);
-  if (!el) return null;
-  const v = el.value.trim();
-  return v || null;
-}
-
-function getNumVal(id) {
-  const el = document.getElementById(id);
-  if (!el || !el.value.trim()) return null;
-  const n = Number(el.value);
-  return isNaN(n) ? null : n;
+function showResumeFile(file, labelEl) {
+  if (!labelEl) return;
+  labelEl.textContent = `📎 ${file.name} (${(file.size / 1024).toFixed(0)} KB)`;
+  labelEl.style.display = 'block';
+  showToast('Resume selected. Save your profile to upload.', 'info');
 }
 
 // ---------------------------------------------------------------------------
-// FAQ ACCORDION
+// Eligibility Checker
 // ---------------------------------------------------------------------------
-function initFaqAccordion() {
-  const faqList = document.getElementById('faq-list');
-  if (!faqList) return;
+function populateEligJobSelect() {
+  const select = document.getElementById('elig-job-select');
+  if (!select) return;
+  select.innerHTML = '<option value="">— select a job —</option>';
+  state.jobs.slice(0, 20).forEach(j => {
+    const opt = document.createElement('option');
+    opt.value = JSON.stringify({ jobId: j.id, companyId: '' });
+    opt.textContent = `${j.title} — ${j.company}`;
+    select.appendChild(opt);
+  });
 
-  faqList.querySelectorAll('.faq-question').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const isOpen   = btn.getAttribute('aria-expanded') === 'true';
-      const answer   = btn.nextElementSibling;
+  // Auto-fill student ID / fit score if logged in
+  if (state.currentUser) {
+    const fitEl = document.getElementById('elig-fit-score');
+    if (fitEl && !fitEl.value) fitEl.value = state.currentUser.fitScore ?? '';
+  }
+}
 
-      // Close all
-      faqList.querySelectorAll('.faq-question').forEach(b => {
-        b.setAttribute('aria-expanded', 'false');
-        const a = b.nextElementSibling;
-        if (a) a.classList.remove('open');
+function setupEligJobSelect() {
+  const select = document.getElementById('elig-job-select');
+  if (!select) return;
+  select.addEventListener('change', () => {
+    if (!select.value) return;
+    try {
+      const parsed = JSON.parse(select.value);
+      const jobIdEl = document.getElementById('elig-job-id');
+      if (jobIdEl && parsed.jobId) jobIdEl.value = parsed.jobId;
+    } catch { /* ignore */ }
+  });
+}
+
+async function checkEligibility() {
+  const studentIdEl = document.getElementById('elig-student-id');
+  const jobIdEl     = document.getElementById('elig-job-id');
+  const companyIdEl = document.getElementById('elig-company-id');
+  const fitScoreEl  = document.getElementById('elig-fit-score');
+  const statusEl    = document.getElementById('elig-status');
+  const resultEl    = document.getElementById('elig-result');
+  const btn         = document.getElementById('elig-check-btn');
+
+  clearFieldErrors('elig-student-id-err', 'elig-job-id-err', 'elig-company-id-err', 'elig-fit-score-err');
+  if (resultEl) resultEl.style.display = 'none';
+
+  const studentId = (studentIdEl?.value || '').trim();
+  const jobId     = (jobIdEl?.value     || '').trim();
+  const companyId = (companyIdEl?.value || '').trim();
+  const fitScore  = Number(fitScoreEl?.value || 0);
+  const jobStatus = statusEl?.value || 'OPEN';
+
+  let hasError = false;
+  if (!isUuid(studentId)) { setFieldError(studentIdEl, document.getElementById('elig-student-id-err'), 'Please enter a valid UUID'); hasError = true; }
+  if (!isUuid(jobId))     { setFieldError(jobIdEl,     document.getElementById('elig-job-id-err'),     'Please enter a valid UUID'); hasError = true; }
+  if (!isUuid(companyId)) { setFieldError(companyIdEl, document.getElementById('elig-company-id-err'), 'Please enter a valid UUID'); hasError = true; }
+  if (isNaN(fitScore) || fitScore < 0 || fitScore > 100) {
+    setFieldError(fitScoreEl, document.getElementById('elig-fit-score-err'), 'Enter a number between 0 and 100'); hasError = true;
+  }
+  if (hasError) return;
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
+
+  try {
+    const params = new URLSearchParams({ studentId, jobId, companyId, fitScore, jobStatus });
+    const res = await fetch(`${API_BASE}/allocate/check?${params}`);
+    const data = await res.json();
+
+    if (resultEl) {
+      if (data.allowed) {
+        resultEl.className = 'elig-result elig-result--allowed';
+        resultEl.innerHTML = `<h3>✅ You're Eligible!</h3><p>Your profile meets the requirements for this position. You can proceed with your application.</p>`;
+      } else {
+        const msg = REASON_MESSAGES[data.reason] || data.reason || 'Not eligible.';
+        resultEl.className = 'elig-result elig-result--denied';
+        resultEl.innerHTML = `<h3>❌ Not Eligible</h3><p>${escHtml(msg)}</p>`;
+      }
+      resultEl.style.display = 'block';
+      resultEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  } catch {
+    if (resultEl) {
+      resultEl.className = 'elig-result elig-result--denied';
+      resultEl.innerHTML = '<h3>Error</h3><p>Could not complete the eligibility check. Please try again.</p>';
+      resultEl.style.display = 'block';
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Check Eligibility'; }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Recommendations
+// ---------------------------------------------------------------------------
+function prefillRecommendations() {
+  if (!state.currentUser) return;
+  const fitEl = document.getElementById('rec-fit-score');
+  if (fitEl && !fitEl.value) fitEl.value = state.currentUser.fitScore ?? '';
+}
+
+async function loadRecommendations() {
+  const studentIdEl = document.getElementById('rec-student-id');
+  const fitScoreEl  = document.getElementById('rec-fit-score');
+  const btn         = document.getElementById('rec-btn');
+  const grid        = document.getElementById('rec-grid');
+  const empty       = document.getElementById('rec-empty');
+  const errorEl     = document.getElementById('rec-error');
+
+  clearFieldErrors('rec-student-id-err', 'rec-fit-score-err');
+
+  const studentId = (studentIdEl?.value || '').trim();
+  const fitScore  = Number(fitScoreEl?.value || 0);
+
+  let hasError = false;
+  if (!isUuid(studentId)) {
+    setFieldError(studentIdEl, document.getElementById('rec-student-id-err'), 'Please enter a valid UUID');
+    hasError = true;
+  }
+  if (isNaN(fitScore) || fitScore < 0 || fitScore > 100) {
+    setFieldError(fitScoreEl, document.getElementById('rec-fit-score-err'), 'Enter a number between 0 and 100');
+    hasError = true;
+  }
+  if (hasError) return;
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
+  if (grid)  { grid.style.display = 'none'; grid.innerHTML = ''; }
+  if (empty) empty.style.display = 'none';
+  if (errorEl) errorEl.style.display = 'none';
+
+  try {
+    const params = new URLSearchParams({ studentId, fitScore });
+    const res = await fetch(`${API_BASE}/jobs/recommend?${params}`);
+
+    if (res.status === 404) {
+      if (empty) { empty.style.display = 'block'; }
+      return;
+    }
+    if (!res.ok) throw new Error('Failed to load recommendations');
+
+    const data = await res.json();
+    const jobs = Array.isArray(data) ? data : (data.jobs || data.recommendations || []);
+
+    if (jobs.length === 0) {
+      if (empty) empty.style.display = 'block';
+    } else {
+      if (grid) {
+        grid.style.display = 'grid';
+        grid.innerHTML = jobs.map(j => renderJobCard(j, { showApply: true, showSave: !!state.currentUser })).join('');
+      }
+    }
+  } catch {
+    if (errorEl) {
+      errorEl.className = 'error-state';
+      errorEl.innerHTML = '<div class="empty-icon">⚠️</div><h3>Could not load recommendations</h3><p>Please check your student ID and try again.</p>';
+      errorEl.style.display = 'block';
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Get My Recommendations'; }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Modal helpers
+// ---------------------------------------------------------------------------
+function openModal(id) {
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.style.display = 'flex';
+    // Focus first input
+    setTimeout(() => { const inp = modal.querySelector('input'); if (inp) inp.focus(); }, 50);
+  }
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(id) {
+  const modal = document.getElementById(id);
+  if (modal) modal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function closeAllModals() {
+  document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+  document.body.style.overflow = '';
+}
+
+// ---------------------------------------------------------------------------
+// Login form
+// ---------------------------------------------------------------------------
+function setupLoginForm() {
+  const form     = document.getElementById('login-form');
+  const errorEl  = document.getElementById('login-error');
+  const submitBtn= document.getElementById('login-submit-btn');
+  const btnText  = document.getElementById('login-btn-text');
+  const spinner  = document.getElementById('login-spinner');
+
+  if (!form) return;
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    clearFieldErrors('login-email-err', 'login-password-err');
+    if (errorEl) errorEl.style.display = 'none';
+
+    const email    = document.getElementById('login-email')?.value.trim() || '';
+    const password = document.getElementById('login-password')?.value      || '';
+
+    let hasError = false;
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRe.test(email)) {
+      setFieldError(document.getElementById('login-email'), document.getElementById('login-email-err'), 'Please enter a valid email');
+      hasError = true;
+    }
+    if (!password) {
+      setFieldError(document.getElementById('login-password'), document.getElementById('login-password-err'), 'Password is required');
+      hasError = true;
+    }
+    if (hasError) return;
+
+    submitBtn.disabled = true;
+    if (btnText) btnText.style.display = 'none';
+    if (spinner) spinner.style.display = 'inline-block';
+
+    try {
+      const data = await login(email, password);
+      state.token = data.token;
+      state.currentUser = data.user;
+      localStorage.setItem(TOKEN_KEY, data.token);
+      localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+
+      closeAllModals();
+      updateNav();
+      showToast(`Welcome back, ${data.user.fullName?.split(' ')[0] || 'friend'}!`, 'success');
+      showSection('dashboard');
+    } catch (err) {
+      if (errorEl) {
+        errorEl.textContent = err.message || 'Invalid email or password';
+        errorEl.style.display = 'block';
+      }
+    } finally {
+      submitBtn.disabled = false;
+      if (btnText) btnText.style.display = 'inline';
+      if (spinner) spinner.style.display = 'none';
+    }
+  });
+
+  // Forgot password
+  const forgotBtn = document.getElementById('login-forgot-btn');
+  const forgotMsg = document.getElementById('login-forgot-msg');
+  if (forgotBtn) forgotBtn.addEventListener('click', () => {
+    if (forgotMsg) forgotMsg.style.display = forgotMsg.style.display === 'none' ? 'block' : 'none';
+  });
+
+  // Toggle password visibility
+  const pwToggle = document.getElementById('login-pw-toggle');
+  const pwField  = document.getElementById('login-password');
+  if (pwToggle && pwField) {
+    pwToggle.addEventListener('click', () => {
+      pwField.type = pwField.type === 'password' ? 'text' : 'password';
+    });
+  }
+
+  // Switch to signup
+  const toSignup = document.getElementById('login-to-signup');
+  if (toSignup) toSignup.addEventListener('click', () => {
+    closeModal('login-modal');
+    openModal('signup-modal');
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Signup form
+// ---------------------------------------------------------------------------
+function setupSignupForm() {
+  const form     = document.getElementById('signup-form');
+  const errorEl  = document.getElementById('signup-error');
+  const submitBtn= document.getElementById('signup-submit-btn');
+  const btnText  = document.getElementById('signup-btn-text');
+  const spinner  = document.getElementById('signup-spinner');
+
+  if (!form) return;
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    clearFieldErrors('signup-name-err','signup-email-err','signup-password-err','signup-confirm-err','signup-terms-err');
+    if (errorEl) errorEl.style.display = 'none';
+
+    const fullName = document.getElementById('signup-name')?.value.trim()     || '';
+    const email    = document.getElementById('signup-email')?.value.trim()    || '';
+    const password = document.getElementById('signup-password')?.value        || '';
+    const confirm  = document.getElementById('signup-confirm')?.value         || '';
+    const terms    = document.getElementById('signup-terms')?.checked;
+
+    let hasError = false;
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!fullName) { setFieldError(document.getElementById('signup-name'), document.getElementById('signup-name-err'), 'Full name is required'); hasError = true; }
+    if (!emailRe.test(email)) { setFieldError(document.getElementById('signup-email'), document.getElementById('signup-email-err'), 'Please enter a valid email'); hasError = true; }
+    if (password.length < 8) { setFieldError(document.getElementById('signup-password'), document.getElementById('signup-password-err'), 'Password must be at least 8 characters'); hasError = true; }
+    if (password !== confirm) { setFieldError(document.getElementById('signup-confirm'), document.getElementById('signup-confirm-err'), 'Passwords do not match'); hasError = true; }
+    if (!terms) {
+      const termsErr = document.getElementById('signup-terms-err');
+      if (termsErr) termsErr.textContent = 'Please agree to the Terms of Service';
+      hasError = true;
+    }
+    if (hasError) return;
+
+    submitBtn.disabled = true;
+    if (btnText) btnText.style.display = 'none';
+    if (spinner) spinner.style.display = 'inline-block';
+
+    try {
+      const data = await signup(fullName, email, password);
+      state.token = data.token;
+      state.currentUser = data.user;
+      localStorage.setItem(TOKEN_KEY, data.token);
+      localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+
+      closeAllModals();
+      updateNav();
+      showOnboarding(data.user);
+    } catch (err) {
+      if (errorEl) {
+        errorEl.textContent = err.message || 'Could not create account';
+        errorEl.style.display = 'block';
+      }
+    } finally {
+      submitBtn.disabled = false;
+      if (btnText) btnText.style.display = 'inline';
+      if (spinner) spinner.style.display = 'none';
+    }
+  });
+
+  // Toggle password visibility
+  const pwToggle = document.getElementById('signup-pw-toggle');
+  const pwField  = document.getElementById('signup-password');
+  if (pwToggle && pwField) {
+    pwToggle.addEventListener('click', () => {
+      pwField.type = pwField.type === 'password' ? 'text' : 'password';
+    });
+  }
+
+  // Switch to login
+  const toLogin = document.getElementById('signup-to-login');
+  if (toLogin) toLogin.addEventListener('click', () => {
+    closeModal('signup-modal');
+    openModal('login-modal');
+  });
+
+  // Terms link closes modal gracefully
+  const termsLink = document.getElementById('signup-terms-link');
+  if (termsLink) termsLink.addEventListener('click', e => {
+    e.preventDefault();
+    closeModal('signup-modal');
+    showSection('about');
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Onboarding overlay
+// ---------------------------------------------------------------------------
+function showOnboarding(user) {
+  const overlay = document.getElementById('onboarding-overlay');
+  if (!overlay) return;
+
+  const nameEl   = document.getElementById('onboarding-name');
+  const emailEl  = document.getElementById('onboarding-email');
+  const numEl    = document.getElementById('onboarding-student-num');
+
+  if (nameEl)  nameEl.textContent  = user.fullName?.split(' ')[0] || 'friend';
+  if (emailEl) emailEl.textContent = user.email || 'your email';
+  if (numEl)   numEl.textContent   = user.studentNumber || '—';
+
+  overlay.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+// ---------------------------------------------------------------------------
+// Profile form submit
+// ---------------------------------------------------------------------------
+function setupProfileForm() {
+  const form    = document.getElementById('profile-form');
+  const errorEl = document.getElementById('profile-form-error');
+  const successEl= document.getElementById('profile-form-success');
+  const saveBtn  = document.getElementById('profile-save-btn');
+  if (!form) return;
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!state.currentUser) { showProfileGate(); return; }
+
+    if (errorEl)   errorEl.style.display   = 'none';
+    if (successEl) successEl.style.display = 'none';
+
+    const data = {};
+    new FormData(form).forEach((v, k) => { if (v) data[k] = v; });
+
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/candidates`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(data),
       });
 
-      // Toggle current
-      if (!isOpen) {
-        btn.setAttribute('aria-expanded', 'true');
-        if (answer) answer.classList.add('open');
+      if (res.ok) {
+        if (successEl) {
+          successEl.textContent = 'Profile saved successfully!';
+          successEl.style.display = 'block';
+        }
+        showToast('Profile saved!', 'success');
+        // Update profile_complete in state
+        if (state.currentUser) {
+          state.currentUser.profileComplete = true;
+          localStorage.setItem(USER_KEY, JSON.stringify(state.currentUser));
+        }
+      } else {
+        const err = await res.json();
+        if (errorEl) {
+          errorEl.textContent = err.error || 'Failed to save profile';
+          errorEl.style.display = 'block';
+        }
       }
+    } catch {
+      if (errorEl) {
+        errorEl.textContent = 'Network error. Please try again.';
+        errorEl.style.display = 'block';
+      }
+    } finally {
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Profile'; }
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Contact form
+// ---------------------------------------------------------------------------
+function setupContactForm() {
+  const btn = document.getElementById('contact-send-btn');
+  const result = document.getElementById('contact-result');
+  if (!btn) return;
+
+  btn.addEventListener('click', () => {
+    const name    = document.getElementById('contact-name')?.value.trim();
+    const email   = document.getElementById('contact-email')?.value.trim();
+    const message = document.getElementById('contact-message')?.value.trim();
+
+    if (!name || !email || !message) {
+      if (result) { result.className = 'form-error'; result.textContent = 'Please fill in all fields.'; result.style.display = 'block'; }
+      return;
+    }
+    // In production you'd POST to an API. For now: show confirmation.
+    if (result) {
+      result.className = 'form-success';
+      result.textContent = "Thanks! We'll get back to you within 1 business day.";
+      result.style.display = 'block';
+    }
+    ['contact-name','contact-email','contact-message'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
     });
   });
 }
 
 // ---------------------------------------------------------------------------
-// Init on DOM ready
+// FAQ Accordion
 // ---------------------------------------------------------------------------
-document.addEventListener('DOMContentLoaded', () => {
-
-  // ----- Nav: link clicks (data-section) -----
-  document.querySelectorAll('[data-section]').forEach(el => {
-    el.addEventListener('click', (e) => {
-      e.preventDefault();
-      showSection(el.dataset.section);
+function setupFaq() {
+  document.querySelectorAll('.faq-q').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = btn.closest('.faq-item');
+      if (!item) return;
+      const isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+      if (!isOpen) item.classList.add('open');
     });
   });
+}
 
-  // ----- Nav: CTA buttons (data-nav) -----
-  document.querySelectorAll('[data-nav]').forEach(el => {
-    el.addEventListener('click', () => showSection(el.dataset.nav));
+// ---------------------------------------------------------------------------
+// Nav dropdown
+// ---------------------------------------------------------------------------
+function setupNavDropdown() {
+  const userBtn  = document.getElementById('nav-user-btn');
+  const dropdown = document.getElementById('nav-dropdown');
+  if (!userBtn || !dropdown) return;
+
+  userBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const isOpen = dropdown.classList.contains('open');
+    dropdown.classList.toggle('open', !isOpen);
+    userBtn.setAttribute('aria-expanded', String(!isOpen));
   });
 
-  // ----- Hamburger -----
+  document.addEventListener('click', () => {
+    dropdown.classList.remove('open');
+    userBtn.setAttribute('aria-expanded', 'false');
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Wire up all static event listeners
+// ---------------------------------------------------------------------------
+function setupEventListeners() {
+  // Hamburger
   const hamburger = document.getElementById('hamburger');
-  const navLinks  = document.getElementById('nav-links');
-  if (hamburger && navLinks) {
-    hamburger.addEventListener('click', () => {
-      const isOpen = navLinks.classList.toggle('open');
-      hamburger.classList.toggle('open', isOpen);
-      hamburger.setAttribute('aria-expanded', String(isOpen));
+  if (hamburger) hamburger.addEventListener('click', () => {
+    const open = hamburger.classList.toggle('open');
+    hamburger.setAttribute('aria-expanded', String(open));
+    const nav = document.getElementById('nav-links');
+    if (nav) nav.classList.toggle('open', open);
+  });
+
+  // Nav links (data-section)
+  document.addEventListener('click', e => {
+    const el = e.target.closest('[data-section]');
+    if (el) { e.preventDefault(); showSection(el.dataset.section); }
+
+    const nav = e.target.closest('[data-nav]');
+    if (nav) { e.preventDefault(); showSection(nav.dataset.nav); }
+  });
+
+  // Modal close buttons
+  document.getElementById('login-modal-close')?.addEventListener('click',  () => closeModal('login-modal'));
+  document.getElementById('signup-modal-close')?.addEventListener('click', () => closeModal('signup-modal'));
+
+  // Close modal on overlay click
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) closeAllModals();
     });
+  });
 
-    // Close menu when clicking outside
-    document.addEventListener('click', (e) => {
-      if (!hamburger.contains(e.target) && !navLinks.contains(e.target)) {
-        closeMenu();
-      }
-    });
-  }
+  // Escape key closes modals
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeAllModals();
+  });
 
-  // ----- Navbar shadow on scroll -----
-  const navbar = document.getElementById('navbar');
-  if (navbar) {
-    window.addEventListener('scroll', () => {
-      navbar.style.boxShadow = window.scrollY > 8
-        ? '0 2px 16px rgba(0,0,0,0.12)'
-        : 'var(--shadow-sm)';
-    }, { passive: true });
-  }
+  // Navbar auth buttons
+  document.getElementById('btn-nav-login')?.addEventListener('click',  () => openModal('login-modal'));
+  document.getElementById('btn-nav-signup')?.addEventListener('click', () => openModal('signup-modal'));
 
-  // ----- Init all sections -----
-  initJobsSection();
-  initEligibilitySection();
-  initRecommendationsSection();
-  initProfileSection();
-  initFaqAccordion();
-  initApplicationsSection();
+  // Home CTAs
+  document.getElementById('btn-hero-signup')?.addEventListener('click',    () => openModal('signup-modal'));
+  document.getElementById('btn-home-cta-signup')?.addEventListener('click',() => openModal('signup-modal'));
 
-  // ----- Hash-based routing -----
-  const hash = window.location.hash.replace('#', '').toLowerCase();
-  if (SECTIONS.includes(hash)) {
+  // Logout
+  document.getElementById('btn-logout')?.addEventListener('click', () => { logout(); });
+
+  // Dashboard gate buttons
+  document.getElementById('btn-dash-gate-login')?.addEventListener('click',  () => openModal('login-modal'));
+  document.getElementById('btn-dash-gate-signup')?.addEventListener('click', () => openModal('signup-modal'));
+
+  // Profile gate button
+  document.getElementById('btn-profile-gate-signup')?.addEventListener('click', () => openModal('signup-modal'));
+
+  // Jobs search
+  document.getElementById('jobs-search-btn')?.addEventListener('click', () => {
+    const q   = document.getElementById('jobs-search')?.value.trim()          || '';
+    const s   = document.getElementById('jobs-status-filter')?.value           || '';
+    const loc = document.getElementById('jobs-location-filter')?.value.trim() || '';
+    loadJobs(q, s, loc);
+  });
+  document.getElementById('jobs-search')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('jobs-search-btn')?.click();
+  });
+  document.getElementById('jobs-retry-btn')?.addEventListener('click', () => loadJobs());
+
+  // Eligibility checker
+  document.getElementById('elig-check-btn')?.addEventListener('click', checkEligibility);
+
+  // Recommendations
+  document.getElementById('rec-btn')?.addEventListener('click', loadRecommendations);
+
+  // Onboarding overlay buttons
+  document.getElementById('btn-onboarding-profile')?.addEventListener('click', () => {
+    const overlay = document.getElementById('onboarding-overlay');
+    if (overlay) overlay.style.display = 'none';
+    document.body.style.overflow = '';
+    showSection('profile');
+  });
+  document.getElementById('btn-onboarding-jobs')?.addEventListener('click', () => {
+    const overlay = document.getElementById('onboarding-overlay');
+    if (overlay) overlay.style.display = 'none';
+    document.body.style.overflow = '';
+    showSection('jobs');
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Hash-based routing on load
+// ---------------------------------------------------------------------------
+function routeFromHash() {
+  const hash = window.location.hash.replace('#', '').trim();
+  if (hash && SECTIONS.includes(hash)) {
     showSection(hash);
   } else {
     showSection('home');
   }
-
-  // Handle browser back/forward
-  window.addEventListener('popstate', () => {
-    const h = window.location.hash.replace('#', '').toLowerCase();
-    showSection(SECTIONS.includes(h) ? h : 'home');
-  });
-});
-
-// ---------------------------------------------------------------------------
-// AI RESUME MODAL
-// ---------------------------------------------------------------------------
-let _currentResumeHtml = '';
-
-function generateAIResume() {
-  openResumeModal();
-}
-
-function openResumeModal() {
-  document.getElementById('resume-modal').classList.remove('hidden');
-  document.getElementById('resume-modal-idle').classList.remove('hidden');
-  document.getElementById('resume-modal-loading').classList.add('hidden');
-  document.getElementById('resume-modal-result').classList.add('hidden');
-  hideError(document.getElementById('resume-modal-error'));
-  document.body.style.overflow = 'hidden';
-}
-
-function closeResumeModal() {
-  document.getElementById('resume-modal').classList.add('hidden');
-  document.body.style.overflow = '';
-}
-
-async function runAIResumeGeneration() {
-  const idleEl    = document.getElementById('resume-modal-idle');
-  const loadingEl = document.getElementById('resume-modal-loading');
-  const resultEl  = document.getElementById('resume-modal-result');
-  const errorEl   = document.getElementById('resume-modal-error');
-  const previewEl = document.getElementById('resume-preview-box');
-
-  idleEl.classList.add('hidden');
-  hideError(errorEl);
-  loadingEl.classList.remove('hidden');
-  resultEl.classList.add('hidden');
-
-  // Gather profile form data
-  const candidateData = gatherProfileData();
-
-  try {
-    const res  = await fetch(`${API_BASE}/api/ai/resume`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ candidateData }),
-    });
-    const data = await res.json();
-
-    loadingEl.classList.add('hidden');
-
-    if (!res.ok) {
-      showError(errorEl, data.error || `Request failed (${res.status})`);
-      idleEl.classList.remove('hidden');
-      return;
-    }
-
-    _currentResumeHtml = data.html || '';
-    previewEl.innerHTML = _currentResumeHtml;
-    resultEl.classList.remove('hidden');
-  } catch (err) {
-    loadingEl.classList.add('hidden');
-    showError(errorEl, 'Network error — please check your connection and try again.');
-    idleEl.classList.remove('hidden');
-  }
-}
-
-function printResume() {
-  window.print();
 }
 
 // ---------------------------------------------------------------------------
-// INTERVIEW PREP MODAL
+// Init
 // ---------------------------------------------------------------------------
-let _interviewJobTitle = '';
-let _interviewJobDesc  = '';
+async function init() {
+  setupEventListeners();
+  setupNavDropdown();
+  setupLoginForm();
+  setupSignupForm();
+  setupProfileForm();
+  setupContactForm();
+  setupFaq();
+  setupTagsInput('skills-input',     'skills-tags',    'p-skills');
+  setupTagsInput('certs-input',      'certs-tags',     'p-certs');
+  setupTagsInput('industries-input', 'industries-tags','p-industries');
+  setupResumeDropZone();
+  setupEligJobSelect();
 
-function openInterviewModal(jobTitle, jobDescription) {
-  _interviewJobTitle = jobTitle || '';
-  _interviewJobDesc  = jobDescription || '';
-
-  const subtitle = document.getElementById('interview-modal-subtitle');
-  if (subtitle) subtitle.textContent = `Preparing you for: ${_interviewJobTitle}`;
-
-  const titleEl = document.getElementById('interview-modal-title');
-  if (titleEl) titleEl.textContent = `\u{1F3AF} Interview Preparation: ${_interviewJobTitle}`;
-
-  document.getElementById('interview-modal').classList.remove('hidden');
-  document.getElementById('interview-modal-idle').classList.remove('hidden');
-  document.getElementById('interview-modal-loading').classList.add('hidden');
-  document.getElementById('interview-modal-result').classList.add('hidden');
-  hideError(document.getElementById('interview-modal-error'));
-  document.body.style.overflow = 'hidden';
+  await checkAuth();
+  updateNav();
+  routeFromHash();
 }
 
-function closeInterviewModal() {
-  document.getElementById('interview-modal').classList.add('hidden');
-  document.body.style.overflow = '';
-}
-
-async function runInterviewPrepGeneration() {
-  const idleEl    = document.getElementById('interview-modal-idle');
-  const loadingEl = document.getElementById('interview-modal-loading');
-  const resultEl  = document.getElementById('interview-modal-result');
-  const errorEl   = document.getElementById('interview-modal-error');
-  const prepEl    = document.getElementById('interview-prep-box');
-
-  idleEl.classList.add('hidden');
-  hideError(errorEl);
-  loadingEl.classList.remove('hidden');
-  resultEl.classList.add('hidden');
-
-  const candidateName = getVal('pf-full-name');
-
-  try {
-    const res  = await fetch(`${API_BASE}/api/ai/interview-prep`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({
-        jobTitle:        _interviewJobTitle,
-        jobDescription:  _interviewJobDesc,
-        candidateName:   candidateName || undefined,
-      }),
-    });
-    const data = await res.json();
-
-    loadingEl.classList.add('hidden');
-
-    if (!res.ok) {
-      showError(errorEl, data.error || `Request failed (${res.status})`);
-      idleEl.classList.remove('hidden');
-      return;
-    }
-
-    prepEl.innerHTML = data.html || '';
-    resultEl.classList.remove('hidden');
-  } catch (err) {
-    loadingEl.classList.add('hidden');
-    showError(errorEl, 'Network error — please check your connection and try again.');
-    idleEl.classList.remove('hidden');
-  }
-}
-
-// ---------------------------------------------------------------------------
-// EMAIL NOTIFICATIONS
-// ---------------------------------------------------------------------------
-async function sendInterviewEmail(candidateEmail, candidateName, jobTitle, companyName, interviewDate) {
-  try {
-    const res  = await fetch(`${API_BASE}/api/notifications/interview`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ candidateEmail, candidateName, jobTitle, companyName, interviewDate }),
-    });
-    const data = await res.json();
-    return data;
-  } catch (err) {
-    return { success: false, error: 'Network error' };
-  }
-}
-
-// ---------------------------------------------------------------------------
-// JOB APPLICATION TRACKER  (localStorage)
-// ---------------------------------------------------------------------------
-const APPS_KEY = 'cb_applications';
-
-function loadApplications() {
-  try {
-    return JSON.parse(localStorage.getItem(APPS_KEY) || '[]');
-  } catch {
-    return [];
-  }
-}
-
-function saveApplicationsToStorage(apps) {
-  localStorage.setItem(APPS_KEY, JSON.stringify(apps));
-}
-
-function saveApplication(jobTitle, companyName, status, notes) {
-  const apps = loadApplications();
-  const entry = {
-    id:        crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36),
-    jobTitle,
-    companyName,
-    status:    status || 'APPLIED',
-    notes:     notes || '',
-    appliedAt: new Date().toISOString(),
-    emailSent: false,
-  };
-  apps.unshift(entry);
-  saveApplicationsToStorage(apps);
-  return entry;
-}
-
-function updateApplicationStatus(id, newStatus) {
-  const apps = loadApplications();
-  const idx  = apps.findIndex(a => a.id === id);
-  if (idx === -1) return null;
-  apps[idx].status = newStatus;
-  saveApplicationsToStorage(apps);
-  renderApplications();
-
-  // Offer to send interview email if status changed to INTERVIEW
-  if (newStatus === 'INTERVIEW') {
-    const app = apps[idx];
-    promptInterviewEmail(app);
-  }
-  return apps[idx];
-}
-
-function deleteApplication(id) {
-  const apps = loadApplications().filter(a => a.id !== id);
-  saveApplicationsToStorage(apps);
-  renderApplications();
-}
-
-function promptInterviewEmail(app) {
-  const candidateEmail = getVal('pf-email');
-  const candidateName  = getVal('pf-full-name');
-
-  if (!candidateEmail) {
-    alert(`Status updated to INTERVIEW for "${app.jobTitle}" at ${app.companyName}.\n\nFill in your email on the Profile page to send yourself an interview notification.`);
-    return;
-  }
-
-  const send = confirm(`Send an interview notification email to ${candidateEmail} for "${app.jobTitle}" at ${app.companyName}?`);
-  if (!send) return;
-
-  sendInterviewEmail(candidateEmail, candidateName || 'Candidate', app.jobTitle, app.companyName)
-    .then(result => {
-      if (result.success) {
-        alert('Interview notification email sent!');
-        const apps = loadApplications();
-        const idx  = apps.findIndex(a => a.id === app.id);
-        if (idx !== -1) { apps[idx].emailSent = true; saveApplicationsToStorage(apps); renderApplications(); }
-      } else {
-        alert(`Email failed: ${result.error}`);
-      }
-    });
-}
-
-function renderApplications() {
-  const apps    = loadApplications();
-  const listEl  = document.getElementById('applications-list');
-  const emptyEl = document.getElementById('applications-empty');
-
-  if (!listEl) return;
-
-  if (apps.length === 0) {
-    listEl.innerHTML = '';
-    if (emptyEl) emptyEl.classList.remove('hidden');
-    return;
-  }
-
-  if (emptyEl) emptyEl.classList.add('hidden');
-
-  const statusOptions = ['APPLIED', 'REVIEWING', 'INTERVIEW', 'OFFER', 'REJECTED'];
-
-  const rows = apps.map(app => {
-    const date   = new Date(app.appliedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const opts   = statusOptions.map(s =>
-      `<option value="${s}"${s === app.status ? ' selected' : ''}>${s}</option>`
-    ).join('');
-    const emailBtn = app.status === 'INTERVIEW' && !app.emailSent
-      ? `<button class="btn btn-sm btn-outline" onclick="promptInterviewEmail(${JSON.stringify(app).replace(/"/g, '&quot;')})">&#128231; Send Email</button>`
-      : '';
-
-    return `
-      <tr>
-        <td><strong>${escHtml(app.jobTitle)}</strong></td>
-        <td>${escHtml(app.companyName)}</td>
-        <td><span class="app-status-badge app-status-${app.status}">${app.status}</span></td>
-        <td>${date}</td>
-        <td>
-          <div class="app-action-row">
-            <select class="app-status-select" onchange="updateApplicationStatus('${app.id}', this.value)">
-              ${opts}
-            </select>
-            <button class="btn btn-sm btn-outline interview-prep-btn" onclick="openInterviewModal('${escHtml(app.jobTitle).replace(/'/g,"\\'")}', '')">&#127919; Prep</button>
-            ${emailBtn}
-            <button class="btn btn-sm btn-danger" onclick="deleteApplication('${app.id}')">&#10005;</button>
-          </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
-
-  listEl.innerHTML = `
-    <table class="applications-table">
-      <thead>
-        <tr>
-          <th>Job Title</th>
-          <th>Company</th>
-          <th>Status</th>
-          <th>Applied</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-  `;
-}
-
-function initApplicationsSection() {
-  renderApplications();
-}
-
-// ---------------------------------------------------------------------------
-// ADD APPLICATION MODAL
-// ---------------------------------------------------------------------------
-function showAddApplicationModal() {
-  document.getElementById('add-application-modal').classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeAddApplicationModal() {
-  document.getElementById('add-application-modal').classList.add('hidden');
-  document.body.style.overflow = '';
-}
-
-function trackApplicationFromCard(jobTitle, company) {
-  const titleInput = document.getElementById('app-job-title');
-  const compInput  = document.getElementById('app-company');
-  if (titleInput) titleInput.value = jobTitle;
-  if (compInput)  compInput.value  = company;
-  showAddApplicationModal();
-  showSection('applications');
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  // Close modals when clicking the backdrop overlay
-  ['resume-modal', 'interview-modal', 'add-application-modal'].forEach(id => {
-    const overlay = document.getElementById(id);
-    if (overlay) {
-      overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-          overlay.classList.add('hidden');
-          document.body.style.overflow = '';
-        }
-      });
-    }
-  });
-
-  const addForm = document.getElementById('add-application-form');
-  if (addForm) {
-    addForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-
-      const titleEl   = document.getElementById('app-job-title');
-      const compEl    = document.getElementById('app-company');
-      const statusEl  = document.getElementById('app-status');
-      const notesEl   = document.getElementById('app-notes');
-      const titleErrEl = document.getElementById('app-job-title-error');
-      const compErrEl  = document.getElementById('app-company-error');
-
-      let valid = true;
-      if (!titleEl || !titleEl.value.trim()) {
-        if (titleErrEl) titleErrEl.textContent = 'Job title is required';
-        valid = false;
-      } else { if (titleErrEl) titleErrEl.textContent = ''; }
-
-      if (!compEl || !compEl.value.trim()) {
-        if (compErrEl) compErrEl.textContent = 'Company is required';
-        valid = false;
-      } else { if (compErrEl) compErrEl.textContent = ''; }
-
-      if (!valid) return;
-
-      saveApplication(
-        titleEl.value.trim(),
-        compEl.value.trim(),
-        statusEl ? statusEl.value : 'APPLIED',
-        notesEl  ? notesEl.value.trim() : ''
-      );
-
-      addForm.reset();
-      closeAddApplicationModal();
-      showSection('applications');
-      renderApplications();
-    });
-  }
-});
-
-// ---------------------------------------------------------------------------
-// HELPER — gather profile form data for AI resume
-// ---------------------------------------------------------------------------
-function gatherProfileData() {
-  const jobTypeCheckboxes = document.querySelectorAll('input[name="job_types"]:checked');
-  const jobTypes = Array.from(jobTypeCheckboxes).map(cb => cb.value);
-  const workSettingRadio = document.querySelector('input[name="work_setting"]:checked');
-
-  return {
-    fullName:           getVal('pf-full-name'),
-    email:              getVal('pf-email'),
-    phone:              getVal('pf-phone'),
-    city:               getVal('pf-city'),
-    state:              getVal('pf-state'),
-    summary:            getVal('pf-summary'),
-    education:          getVal('pf-education'),
-    yearsExperience:    getVal('pf-years-exp'),
-    workAuthorization:  getVal('pf-work-auth'),
-    linkedinUrl:        getVal('pf-linkedin'),
-    portfolioUrl:       getVal('pf-portfolio'),
-    salaryMin:          getVal('pf-salary-min'),
-    salaryMax:          getVal('pf-salary-max'),
-    jobTypes:           jobTypes,
-    workSetting:        workSettingRadio ? workSettingRadio.value : 'ANY',
-  };
-}
+document.addEventListener('DOMContentLoaded', init);
