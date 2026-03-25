@@ -4,6 +4,20 @@ import { getSampleJobs, SampleJob } from '../services/jobImportService';
 
 const router = Router();
 
+const STATE_NAMES: Record<string, string> = {
+  AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California',
+  CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', FL: 'Florida', GA: 'Georgia',
+  HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois', IN: 'Indiana', IA: 'Iowa',
+  KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana', ME: 'Maine', MD: 'Maryland',
+  MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota', MS: 'Mississippi', MO: 'Missouri',
+  MT: 'Montana', NE: 'Nebraska', NV: 'Nevada', NH: 'New Hampshire', NJ: 'New Jersey',
+  NM: 'New Mexico', NY: 'New York', NC: 'North Carolina', ND: 'North Dakota', OH: 'Ohio',
+  OK: 'Oklahoma', OR: 'Oregon', PA: 'Pennsylvania', RI: 'Rhode Island', SC: 'South Carolina',
+  SD: 'South Dakota', TN: 'Tennessee', TX: 'Texas', UT: 'Utah', VT: 'Vermont',
+  VA: 'Virginia', WA: 'Washington', WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming',
+  DC: 'Washington D.C.',
+};
+
 // ---------------------------------------------------------------------------
 // Server-side cache — fetch fresh jobs from JSearch at most once per hour
 // ---------------------------------------------------------------------------
@@ -102,8 +116,8 @@ router.get('/jobs', async (req: Request, res: Response) => {
         if (loc.toLowerCase() === 'remote') {
           return jobLoc.toLowerCase().includes('remote');
         }
-        // Match ", AL" pattern so "AL" doesn't hit "Dallas" or "Philadelphia"
-        return jobLoc.includes(`, ${loc.toUpperCase()}`);
+        const fullName = STATE_NAMES[loc.toUpperCase()] || loc;
+        return jobLoc.toLowerCase().includes(fullName.toLowerCase());
       });
     }
 
