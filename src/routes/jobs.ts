@@ -59,8 +59,23 @@ router.get('/jobs', async (req: Request, res: Response) => {
     }
 
     // No DB jobs — fetch real jobs from JSearch only (no sample fallback)
-    const query2 = typeof search === 'string' && search.trim() ? search.trim() : 'software engineer';
-    const realJobs = await getSampleJobs(query2);
+    let realJobs;
+    if (typeof search === 'string' && search.trim()) {
+      realJobs = await getSampleJobs(search.trim());
+    } else {
+      const categories = [
+        'data analyst',
+        'business analyst',
+        'SQL Excel analyst',
+        'Power BI developer',
+        'Salesforce administrator',
+        'AI support analyst',
+        'tech support specialist',
+        'B2B sales analyst',
+      ];
+      const results = await Promise.all(categories.map(q => getSampleJobs(q)));
+      realJobs = results.flat();
+    }
 
     // Apply filters
     let filtered = realJobs;
