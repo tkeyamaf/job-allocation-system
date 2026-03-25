@@ -13,17 +13,14 @@ const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 async function getCachedJobs(): Promise<SampleJob[]> {
   if (cachedJobs.length > 0 && Date.now() - cacheTimestamp < CACHE_TTL_MS) {
+    console.log(`[Jobs] Serving ${cachedJobs.length} cached jobs`);
     return cachedJobs;
   }
-  const categories = [
-    'data analyst',
-    'business analyst',
-    'Power BI developer',
-    'Salesforce administrator',
-    'tech support specialist',
-    'SQL Excel analyst',
-  ];
-  const results = await Promise.all(categories.map(q => getSampleJobs(q)));
+  console.log('[Jobs] Cache miss — fetching from JSearch...');
+  const results = await Promise.all([
+    getSampleJobs('data analyst business analyst'),
+    getSampleJobs('Salesforce Power BI SQL developer'),
+  ]);
   cachedJobs = results.flat();
   cacheTimestamp = Date.now();
   console.log(`[Jobs] Cache refreshed: ${cachedJobs.length} jobs fetched`);
@@ -107,6 +104,16 @@ router.get('/jobs', async (req: Request, res: Response) => {
   } catch (err) {
     console.error('Error fetching jobs:', err);
     res.json([]);
+  }
+});
+
+// Diagnostic: GET /api/jobs/ping — check JSearch status
+router.get('/jobs/ping', async (_req: Request, res: Response) => {
+  try {
+    const jobs = await getSampleJobs('data analyst');
+    res.json({ ok: true, count: jobs.length, sample: jobs[0]?.title || null });
+  } catch (err: any) {
+    res.json({ ok: false, error: err.message });
   }
 });
 
