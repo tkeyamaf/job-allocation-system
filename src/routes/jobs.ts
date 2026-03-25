@@ -1,8 +1,34 @@
 import { Router, Request, Response } from 'express';
 import pool from '../config/database';
-import { getSampleJobs } from '../services/jobImportService';
+import { getSampleJobs, SampleJob } from '../services/jobImportService';
 
 const router = Router();
+
+// ---------------------------------------------------------------------------
+// Server-side cache — fetch fresh jobs from JSearch at most once per hour
+// ---------------------------------------------------------------------------
+let cachedJobs: SampleJob[] = [];
+let cacheTimestamp = 0;
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+async function getCachedJobs(): Promise<SampleJob[]> {
+  if (cachedJobs.length > 0 && Date.now() - cacheTimestamp < CACHE_TTL_MS) {
+    return cachedJobs;
+  }
+  const categories = [
+    'data analyst',
+    'business analyst',
+    'Power BI developer',
+    'Salesforce administrator',
+    'tech support specialist',
+    'SQL Excel analyst',
+  ];
+  const results = await Promise.all(categories.map(q => getSampleJobs(q)));
+  cachedJobs = results.flat();
+  cacheTimestamp = Date.now();
+  console.log(`[Jobs] Cache refreshed: ${cachedJobs.length} jobs fetched`);
+  return cachedJobs;
+}
 
 // GET /api/jobs — return all jobs joined with company name
 // Supports query params: ?search=keyword&status=OPEN&location=text
@@ -58,23 +84,12 @@ router.get('/jobs', async (req: Request, res: Response) => {
       return;
     }
 
-    // No DB jobs — fetch real jobs from JSearch only (no sample fallback)
+    // No DB jobs — fetch real jobs from JSearch (cached to avoid rate limits)
     let realJobs;
     if (typeof search === 'string' && search.trim()) {
       realJobs = await getSampleJobs(search.trim());
     } else {
-      const categories = [
-        'data analyst',
-        'business analyst',
-        'SQL Excel analyst',
-        'Power BI developer',
-        'Salesforce administrator',
-        'AI support analyst',
-        'tech support specialist',
-        'B2B sales analyst',
-      ];
-      const results = await Promise.all(categories.map(q => getSampleJobs(q)));
-      realJobs = results.flat();
+      realJobs = await getCachedJobs();
     }
 
     // Apply filters (search is already handled by JSearch query, only filter status/location)
