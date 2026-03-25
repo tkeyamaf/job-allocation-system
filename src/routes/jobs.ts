@@ -96,9 +96,17 @@ router.get('/jobs', async (req: Request, res: Response) => {
     }
 
     // No DB jobs — fetch real jobs from JSearch (cached to avoid rate limits)
+    const searchTerm = typeof search === 'string' ? search.trim() : '';
+    const locationTerm = typeof location === 'string' ? location.trim() : '';
+    const stateName = locationTerm ? (STATE_NAMES[locationTerm.toUpperCase()] || locationTerm) : '';
+
     let realJobs;
-    if (typeof search === 'string' && search.trim()) {
-      realJobs = await getSampleJobs(search.trim());
+    if (searchTerm && stateName) {
+      realJobs = await getSampleJobs(`${searchTerm} in ${stateName}`);
+    } else if (searchTerm) {
+      realJobs = await getSampleJobs(searchTerm);
+    } else if (stateName) {
+      realJobs = await getSampleJobs(`data analyst business analyst in ${stateName}`);
     } else {
       realJobs = await getCachedJobs();
     }
