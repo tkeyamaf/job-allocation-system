@@ -19,26 +19,30 @@ const STATE_NAMES: Record<string, string> = {
 };
 
 // ---------------------------------------------------------------------------
-// Server-side cache — fetch fresh jobs from JSearch at most once per hour
+// Server-side cache — at most 1 API call per query per hour
 // ---------------------------------------------------------------------------
-let cachedJobs: SampleJob[] = [];
-let cacheTimestamp = 0;
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
-async function getCachedJobs(): Promise<SampleJob[]> {
-  if (cachedJobs.length > 0 && Date.now() - cacheTimestamp < CACHE_TTL_MS) {
-    console.log(`[Jobs] Serving ${cachedJobs.length} cached jobs`);
-    return cachedJobs;
+interface CacheEntry { jobs: SampleJob[]; timestamp: number; }
+const queryCache = new Map<string, CacheEntry>();
+
+async function getCachedQuery(query: string): Promise<SampleJob[]> {
+  const entry = queryCache.get(query);
+  if (entry && Date.now() - entry.timestamp < CACHE_TTL_MS) {
+    return entry.jobs;
   }
-  console.log('[Jobs] Cache miss — fetching from JSearch...');
-  const results = await Promise.all([
-    getSampleJobs('data analyst business analyst'),
-    getSampleJobs('Salesforce Power BI SQL developer'),
+  const jobs = await getSampleJobs(query);
+  queryCache.set(query, { jobs, timestamp: Date.now() });
+  console.log(`[Jobs] Fetched "${query}": ${jobs.length} jobs`);
+  return jobs;
+}
+
+async function getCachedJobs(): Promise<SampleJob[]> {
+  const [a, b] = await Promise.all([
+    getCachedQuery('data analyst business analyst'),
+    getCachedQuery('Salesforce Power BI SQL developer'),
   ]);
-  cachedJobs = results.flat();
-  cacheTimestamp = Date.now();
-  console.log(`[Jobs] Cache refreshed: ${cachedJobs.length} jobs fetched`);
-  return cachedJobs;
+  return [...a, ...b];
 }
 
 // GET /api/jobs — return all jobs joined with company name
@@ -140,7 +144,8 @@ router.get('/jobs', async (req: Request, res: Response) => {
 router.get('/jobs/ping', async (_req: Request, res: Response) => {
   try {
     const jobs = await getCachedJobs();
-    const ageMinutes = cacheTimestamp ? Math.floor((Date.now() - cacheTimestamp) / 60000) : null;
+    const entry = queryCache.get('data analyst business analyst');
+    const ageMinutes = entry ? Math.floor((Date.now() - entry.timestamp) / 60000) : null;
     res.json({ ok: true, count: jobs.length, cacheAgeMinutes: ageMinutes, sample: jobs[0]?.title || null });
   } catch (err: any) {
     res.json({ ok: false, error: err.message });
