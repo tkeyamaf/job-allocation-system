@@ -21,11 +21,9 @@ export interface SampleJob {
 function fetchJSearchJobs(query: string): Promise<SampleJob[]> {
   return new Promise((resolve) => {
     if (!process.env.RAPIDAPI_KEY) {
-      console.warn('[JSearch] No RAPIDAPI_KEY set');
       resolve([]);
       return;
     }
-    console.log('[JSearch] Fetching jobs for query:', query);
 
     const options = {
       method: 'GET',
@@ -39,12 +37,10 @@ function fetchJSearchJobs(query: string): Promise<SampleJob[]> {
 
     const req = https.request(options, (res) => {
       let data = '';
-      console.log('[JSearch] HTTP status:', res.statusCode);
       res.on('data', (chunk) => { data += chunk; });
       res.on('end', () => {
         try {
           const parsed = JSON.parse(data);
-          console.log('[JSearch] Response keys:', Object.keys(parsed), '| data length:', (parsed.data || []).length);
           const jobs: SampleJob[] = (parsed.data || []).slice(0, 12).map((job: any) => ({
             id: job.job_id || crypto.randomUUID(),
             title: job.job_title || 'Untitled',
@@ -62,14 +58,13 @@ function fetchJSearchJobs(query: string): Promise<SampleJob[]> {
             createdAt: job.job_posted_at_datetime_utc || new Date().toISOString(),
           }));
           resolve(jobs);
-        } catch (e: any) {
-          console.error('[JSearch] Parse error:', e.message, '| raw:', data.slice(0, 200));
+        } catch {
           resolve([]);
         }
       });
     });
 
-    req.on('error', (err) => { console.error('[JSearch] Request error:', err.message); resolve([]); });
+    req.on('error', () => resolve([]));
     req.end();
   });
 }
